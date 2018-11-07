@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28010.2050
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParkDACE", "ParkDACE\ParkDACE.csproj", "{D6D5EECC-0E16-48D2-9901-EF380FB81DAF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BOT-SpotSensors", "BOT-SpotSensors\BOT-SpotSensors.csproj", "{A99137A0-908C-4D5C-A0F9-50CF31D8DFBD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{D6D5EECC-0E16-48D2-9901-EF380FB81DAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6D5EECC-0E16-48D2-9901-EF380FB81DAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6D5EECC-0E16-48D2-9901-EF380FB81DAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A99137A0-908C-4D5C-A0F9-50CF31D8DFBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A99137A0-908C-4D5C-A0F9-50CF31D8DFBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A99137A0-908C-4D5C-A0F9-50CF31D8DFBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A99137A0-908C-4D5C-A0F9-50CF31D8DFBD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

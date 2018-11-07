@@ -52,7 +52,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="files\Campus_2_A_Park1.xlsx" />
+    <None Include="files\Campus_2_A_Park1.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="lib\ParkingSensorNodeDll.dll" />
