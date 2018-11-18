@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>RESTful web service - Products App</title>
+    <meta charset="utf-8" />
+</head>
+<body>
+    <div>
+        <h2>All Available Parks</h2>
+        <ul id="parks" />
+    </div>
+    <div>
+        <h2>Search by Park Id</h2>
+        <input type="text" id="parkId" size="5" />
+        <input type="button" value="Search" onclick="findPark();" />
+        <p id="park" />
+    </div>
+    <div>
+    </div>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.1.4.min.js"></script>
+    <script>
+        var uri = 'http://localhost:51352/api/parks'; //TODO: MUST BE UPDATED
+         $(document).ready(function (){
+            $.get(uri)
+            .done(function (data) {
+                //alert(data);
+                //console.dir(data);
+                //ON SUCESS, 'data' contains a list of products
+                $.each(data, function (key, item) {
+                    //ADD a list item for the product
+                    var text = formatItemParks(item);
+                    if (text != null)
+                    $('<li>', { text: text }).appendTo($('#parks'));
+                });
+             }).fail(function (jqxhr, textStatus, error) {
+                 var err = textStatus + ", " + error;
+                 alert("Request failed: " + err);
+             });
+        });
+        function formatItemParks(item) {
+            if (item.Available === 0) return null;
+            return "Park (" + item.Id + ") is  Available right now ";
+        }
+        function formatItemPark(item) {
+            //if (item.Available === 0) return null;
+            var text = "Park (" + item.Id + ") currently has [" + item.ParkingSpots.length +"] Parking Spots.";
+            $.each(item.ParkingSpots, function (key, item2) {
+                var availability;
+                if (item2.Available == 0) { availability = "Unavailable"; }
+                else { availability = "Available"; }
+
+                var text2 = "Parking Spot (" + item2.Id + ") is currently " + availability ;
+                text = text + "<br /> &nbsp&nbsp&nbsp&nbsp" + text2;
+            })
+            return text;
+        }
+
+        function findPark()
+        {
+            var id = $('#parkId').val();
+            $.getJSON(uri + '/' + id)
+                .done(function (data) {
+                    console.dir(data);
+                $('#park').html(formatItemPark(data));
+            })
+            .fail(function (jqxhr, textStatus, error) {
+            var err = textStatus2 + ", " + error;
+            alert("Request failed: ", err);
+            });
+        }
+
+    </script>
+</body>
+</html>
