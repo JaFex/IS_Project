@@ -10,8 +10,12 @@ namespace SmartPark.Models
         public int IdPark { get; set; }
         public int Id { get; set; }
         public int Available { get; set; }
-        /*
-        MAIS CENAS
-        */
+        /* public string Type { get; set; }
+         public int Name{ get; set; }
+         public string Location { get; set; }
+         public string Value { get; set; }
+         public DateTime TimeStamp { get; set; }
+         public int BatteryStatus{ get; set; }
+         */
     }
 }
