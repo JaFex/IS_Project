@@ -21,35 +21,35 @@ namespace SmartPark.Controllers
                 new ParkingSpot{ IdPark=1,Id=3,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=4,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=5,Available=0 },
-            } },
+            } ,Description= "PARQUE DO IPL"},
             new Park{ Id = 2, Available=0,ParkingSpots = new List<ParkingSpot>{
                 new ParkingSpot{ IdPark=1,Id=1,Available=1 },
                 new ParkingSpot{ IdPark=1,Id=2,Available=1 },
                 new ParkingSpot{ IdPark=1,Id=3,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=4,Available=1 },
                 new ParkingSpot{ IdPark=1,Id=5,Available=0 },
-            } },
+            } ,Description= "PARQUE DO ESTG"},
             new Park{ Id = 3, Available=1,ParkingSpots = new List<ParkingSpot>{
                 new ParkingSpot{ IdPark=1,Id=1,Available=1 },
                 new ParkingSpot{ IdPark=1,Id=2,Available=1 },
                 new ParkingSpot{ IdPark=1,Id=3,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=4,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=5,Available=1 },
-            } },
+            } ,Description= "PARQUE DO LEIRIA"},
             new Park{ Id = 4, Available=0,ParkingSpots = new List<ParkingSpot>{
                 new ParkingSpot{ IdPark=1,Id=1,Available=1 },
                 new ParkingSpot{ IdPark=1,Id=2,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=3,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=4,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=5,Available=0 },
-            } },
+            } ,Description= "PARQUE DO Asdasdas"},
             new Park{ Id = 5, Available=1,ParkingSpots = new List<ParkingSpot>{
                 new ParkingSpot{ IdPark=1,Id=1,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=2,Available=1 },
                 new ParkingSpot{ IdPark=1,Id=3,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=4,Available=0 },
                 new ParkingSpot{ IdPark=1,Id=5,Available=0 },
-            } }
+            } ,Description= "PARQUE DO IPsdSAddsadawerqL"}
         };
         public IEnumerable<Park> GetAllParks()
         {

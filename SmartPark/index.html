@@ -22,6 +22,18 @@
         <p id="freeParking" />
     </div>
     <div>
+        <h2>Park Detail</h2>
+        <input type="text" id="detailParkId" size="5" />
+        <input type="button" value="Search" onclick="findDetailPark();" />
+        <p id="detailPark" />
+    </div>
+    <div>
+        <h2>Parking Spot Detail</h2>
+        <input type="text" id="detailParkingSpotId" size="5" />
+        <input type="button" value="Search" onclick="findDetailParkingSpot();" />
+        <p id="detailParkingSpot" />
+    </div>
+    <div>
     </div>
     <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.1.4.min.js"></script>
     <script>
@@ -43,6 +55,7 @@
                     alert("Request failed: " + err);
                 });
         });
+        //park functions
         function formatItemParks(item) {
             if (item.Available === 0) return null;
             return "Park (" + item.Id + ") is  Available right now ";
@@ -60,8 +73,16 @@
             })
             return text;
         }
+        function formatItemDetailPark(item) {
+            var text = "Park (" + item.Id + ") currently has [" + item.ParkingSpots.length + "] Parking Spots;<br />" +
+                "Details: " + item.Description + ";";
+
+            return text;
+        }
+
+        //parking text functions
         function formatItemFreeParking(item) {
-            var text = "Park (" + item.Id + ") currently has Free:";
+            var text = "Free Parking Spots in Park (" + item.Id + "):";
             $.each(item.ParkingSpots, function (key, item2) {
                 if (item2.Available == 0) {
                 }
@@ -73,12 +94,20 @@
             })
             return text;
         }
+        function formatItemDetailParkingSpot(item) {
+            var text = "Parking Spot (" + item.Id + ") belongs to Park[" + item.ParkId + "] Parking Spots;<br />" +
+                "Availability: " + item.Available + ";";
 
+            return text;
+        }
+
+        //funbctions
+        //function 1
         function findPark() {
             var id = $('#parkId').val();
+            uri = http://localhost:51352/api/parkingspots:
             $.getJSON(uri + '/' + id)
                 .done(function (data) {
-                    console.dir(data);
                     $('#park').html(formatItemPark(data));
                 })
                 .fail(function (jqxhr, textStatus, error) {
@@ -86,13 +115,38 @@
                     alert("Request failed: ", err);
                 });
         }
+        //function 5
 
         function findFreeParking() {
             var id = $('#freeParkingId').val();
             $.getJSON(uri + '/' + id)
                 .done(function (data) {
-                    console.dir(data);
                     $('#freeParking').html(formatItemFreeParking(data));
+                })
+                .fail(function (jqxhr, textStatus, error) {
+                    var err = textStatus2 + ", " + error;
+                    alert("Request failed: ", err);
+                });
+        }
+
+        //function 6
+
+        function findDetailPark() {
+            var id = $('#detailParkId').val();
+            $.getJSON(uri + '/' + id)
+                .done(function (data) {
+                    $('#detailPark').html(formatItemDetailPark(data));
+                })
+                .fail(function (jqxhr, textStatus, error) {
+                    var err = textStatus2 + ", " + error;
+                    alert("Request failed: ", err);
+                });
+        }
+        function findDetailParkingSpot() {
+            var id = $('#detailParkId').val();
+            $.getJSON(uri + '/' + id)
+                .done(function (data) {
+                    $('#detailParkingSpot').html(formatItemDetailParkingSpot(data));
                 })
                 .fail(function (jqxhr, textStatus, error) {
                     var err = textStatus2 + ", " + error;
