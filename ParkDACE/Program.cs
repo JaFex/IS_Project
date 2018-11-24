@@ -1,270 +1,192 @@
-﻿using System;
+﻿using ParkDACE.classes;
+using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Schema;
-using Excel = Microsoft.Office.Interop.Excel;
+using ParkDACE.ServiceParkingSpots;
+using System.Text;
+using uPLibrary.Networking.M2Mqtt.Messages;
+using uPLibrary.Networking.M2Mqtt;
 
 namespace ParkDACE
 {
     class Program
-    {
-        private static string strDocuments = AppDomain.CurrentDomain.BaseDirectory;
-        
-        private static string fileXmlParkingSpot = "Parking_Spots.xml";
-
-        private static string fileCampus_2_A_Park1Excel = "Campus_2_A_Park1.xlsx";
-        private static string[][] locationCampus_2_A_Park1 = new string[2][];
+    { 
+        private static List<Provider> providers;
+        private static List<LocationExcel> locationCampus;
+        private static Timer timer;
+        private static MqttClient mClient;
+        private static string[] ips = new string[] { "broker.hivemq.com", "127.0.0.1" };
 
         static void Main(string[] args)
         {
-            ParkingSensorNodeDll.ParkingSensorNodeDll dll = new ParkingSensorNodeDll.ParkingSensorNodeDll();
-            locationCampus_2_A_Park1 = ReadFromExcelFile(fileCampus_2_A_Park1Excel);
-            dll.Initialize(ComputeResponse, 10000);
+            Console.WriteLine("#################################################################################");
+            Console.WriteLine("###################################   INIT   ####################################");
+            Console.WriteLine("#################################################################################\n\n");
+            providers = new List<Provider>();
+            locationCampus = new List<LocationExcel>();
+            Console.WriteLine("######################SETTINGS#####################");
+            int time = ReadXMLParkingLocation("ParkingLocation.xml");
+            string topicsString = "ParkDACE\\all";
+
+
+            foreach (Provider provider in providers)
+            {
+                Console.WriteLine("");
+                Console.WriteLine("Connection Type: " + provider.connectionType);
+                Console.WriteLine("Endpoint: " + provider.endpoint);
+                Console.WriteLine("parkInfo: ");
+                Console.WriteLine("\tID: " + provider.parkInfoID);
+                Console.WriteLine("\tDescription: " + provider.parkInfoDescription);
+                Console.WriteLine("\tNumberOfSpots: " + provider.parkInfoNumberOfSpecialSpots);
+                Console.WriteLine("\tOperatingHours: " + provider.parkInfoOperatingHours);
+                Console.WriteLine("\tNumberOfSpecialSpots: " + provider.parkInfoNumberOfSpecialSpots);
+                Console.WriteLine("\tGeoLocationFile: " + provider.parkInfoGeoLocationFile);
+                Console.WriteLine("");
+
+                topicsString += ", ParkDACE\\" + provider.parkInfoID;
+            }
+            Console.WriteLine("####################END-SETTINGS###################\n");
+
+            Console.WriteLine("#####################MOSQUITTO#####################");
+            mClient = Mosquitto.connectMosquitto(ips);
+            Console.WriteLine("Topics that will be send data "+ topicsString + "!");
+            Console.WriteLine("###################END-MOSQUITTO###################\n");
+
+            Console.WriteLine("\n\n\n#################################################################################");
+            Console.WriteLine("###########################   Starting Application   ############################");
+            Console.WriteLine("#################################################################################\n\n");
+            foreach (Provider provider in providers)
+            {
+                locationCampus.Add(new LocationExcel(provider.parkInfoGeoLocationFile));
+                if (provider.connectionType.Equals("DLL") || provider.endpoint.Equals("ParkingSensorNodeDll"))
+                {
+                    ParkingSensorNodeDll.ParkingSensorNodeDll dll = new ParkingSensorNodeDll.ParkingSensorNodeDll();
+                    dll.Initialize(ComputeResponse, time);
+                } else if (provider.connectionType.Equals("SOAP"))
+                {
+                    timer = new Timer(new TimerCallback(timer_SOAP), provider, 1000, time);
+                }
+            }
+            
+        }
+
+        private static void timer_SOAP(object stateInfo)
+        {
+            Console.WriteLine("#######################SOAP########################");
+            Provider provider = (Provider)stateInfo;
+            Random random = new Random();
+            var client = new SpotSensorsClient();
+            XmlDocument doc = new XmlDocument();
+
+            Location location = null;
+            foreach (LocationExcel le in locationCampus)
+            {
+                if (le.parkingID.Equals(provider.parkInfoID))
+                {
+                    location = le.giveLocation(random.Next(0, provider.parkInfoNumberOfSpots));
+                }
+            }
+            if (location == null)
+            {
+                Console.WriteLine("Erro try to get spot from "+provider.endpoint);
+                Console.WriteLine("######################END-SOAP#####################\n\n");
+                return;
+            }
+            string xmlString = client.GetSensorDataString(location.name);
+            doc.LoadXml(xmlString);
+            XmlNode locationNode = doc.SelectSingleNode("//location");
+
+            locationNode.InnerXml = location.ToXML(doc).InnerXml;
+
+            Console.WriteLine(FunctionHelper.formatXmlToUnminifierString(doc));
+
+            Console.WriteLine("Sending information...");
+            Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\all", "ParkDACE\\"+provider.parkInfoID }, doc.OuterXml);
+            Console.WriteLine("######################END-SOAP#####################\n\n");
         }
 
         public static void ComputeResponse(string str)
         {
+            Console.WriteLine("########################DLL########################");
             string[] strs = str.Split(';');
-
-            string[] ids = { "ParkID", "SpotID", "Timestamp", "ParkingSpotStatus", "BatteryStatus" };
-            Console.WriteLine("###################################################");
-
-            XMLParkingSpot(fileXmlParkingSpot, strs[0], strs[1], strs[3], strs[2], strs[4]);
-            Thread.Sleep(800);
-            ReadXMLParkingSpot(fileXmlParkingSpot, strs[0], strs[1]);
-            Console.WriteLine("############\n");
-
-
-            for (int i = 0; i < strs.Length; i++)
-            {
-                Console.WriteLine(ids[i] + ": " + strs[i]);
-            }
-
-            Console.WriteLine("###################################################\n");
-
-        }
-
-        public static void ReadXMLParkingSpot(string filename, string id, string name)
-        {
-            if (!checkIfFileExist(fileXmlParkingSpot))
-            {
-                return;
-            }
+            //string[] ids = { "ParkID", "SpotID", "Timestamp", "ParkingSpotStatus", "BatteryStatus" };
 
             XmlDocument doc = new XmlDocument();
-            doc.Load(@fileXmlParkingSpot);
-            XmlNode root = doc.SelectSingleNode("/parks");
-            XmlNode parkingSpotNode = doc.SelectSingleNode("//parkingSpot[id='" + id + "']").SelectSingleNode("//parkingSpot[name='" + name + "']");
-            XmlNode statusNode = doc.SelectSingleNode("//parkingSpot[id='" + id + "']").SelectSingleNode("//parkingSpot[name='" + name + "']/status");
-            if (parkingSpotNode == null)
-            {
-                return;
-            }
-            Console.WriteLine("id: " + parkingSpotNode["id"].InnerText);
-            Console.WriteLine("name: " + parkingSpotNode["name"].InnerText);
-            Console.WriteLine("location: " + parkingSpotNode["location"].InnerText);
-            Console.WriteLine("value: " + statusNode["value"].InnerText);
-            Console.WriteLine("timestamp: " + statusNode["timestamp"].InnerText);
-            Console.WriteLine("batteryStatus: " + parkingSpotNode["batteryStatus"].InnerText);
+            string xmlString = CreateXMLSpot(strs[0], strs[1], strs[3], strs[2], strs[4]);
+            doc.LoadXml(xmlString);
+
+            Console.WriteLine(FunctionHelper.formatXmlToUnminifierString(doc));
+            Console.WriteLine("Sending information...");
+            Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\all", "ParkDACE\\" +strs[0] }, doc.OuterXml);
+            Console.WriteLine("######################END-DLL######################\n\n");
         }
 
-        public static string XMLParkingSpot(string filename, string id, string name, string value, string timestamp, string batteryStatus)
-        {
-            if (!checkIfFileExist(fileXmlParkingSpot))
-            {
-                return CreateXMLParkingSpot(filename, id, name, value, timestamp, batteryStatus);
-            }
-
-            XmlDocument doc = new XmlDocument();
-            doc.Load(@fileXmlParkingSpot);
-            XmlNode root = doc.SelectSingleNode("/parks");
-            XmlNode parkingSpotNode = doc.SelectSingleNode("//parkingSpot[id='" + id + "']").SelectSingleNode("//parkingSpot[name='" + name + "']");
-            XmlNode statusNode = doc.SelectSingleNode("//parkingSpot[id='" + id + "']").SelectSingleNode("//parkingSpot[name='" + name + "']/status");
-            if (parkingSpotNode == null)
-            {
-                XmlElement parkingSpot = CreateParkingSpot(doc, id, "ParkingSpot", name, value, timestamp, batteryStatus);
-                root.AppendChild(parkingSpot);
-                doc.Save(@fileXmlParkingSpot);
-                return parkingSpot.OuterXml;
-            }
-            statusNode["value"].InnerText = value;
-            statusNode["timestamp"].InnerText = timestamp;
-            parkingSpotNode["batteryStatus"].InnerText = batteryStatus;
-            doc.Save(@fileXmlParkingSpot);
-            return parkingSpotNode.OuterXml;
-        }
-
-        public static string CreateXMLParkingSpot(string filename, string id, string name, string value, string timestamp, string batteryStatus)
+        public static string CreateXMLSpot(string id, string name, string value, string timestamp, string batteryStatus)
         {
             XmlDocument doc = new XmlDocument();
-            // Create the XML Declaration, and append it to XML document
             XmlDeclaration dec = doc.CreateXmlDeclaration("1.0", null, null);
             doc.AppendChild(dec);
-            // Create the root element
-            XmlElement root = doc.CreateElement("parks");
-            doc.AppendChild(root);
-            // Create Books
-            // Note that to set the text inside the element,
-            // you use .InnerText
-            // You use SetAttribute to set attribute
-            XmlElement parkingSpot = CreateParkingSpot(doc, id, "ParkingSpot", name, value, timestamp, batteryStatus);
-            root.AppendChild(parkingSpot);
 
-            doc.Save(@fileXmlParkingSpot);
-            //string xmlOutput = doc.OuterXml;
-
-            return parkingSpot.OuterXml;
-            //return doc.InnerXml;
-
-        }
-
-        public static XmlElement CreateParkingSpot(XmlDocument doc, string id, string type, string name, string value, string timestamp, string batteryStatus)
-        {
-            XmlElement parkingSpotNote = doc.CreateElement("parkingSpot");
-
-                XmlElement idNote = doc.CreateElement("id");
-                idNote.InnerText = id;
-
-                XmlElement typeNote = doc.CreateElement("type");
-                typeNote.InnerText = type;
-
-                XmlElement nameNote = doc.CreateElement("name");
-                nameNote.InnerText = name;
-
-                XmlElement locationNote = doc.CreateElement("location");
-                string[] location = readLocation(id, name);
-                    if(location == null)
-                    {
-                        location = new string[2];
-                        location[0] = "";
-                        location[1] = "";
-                    }
-                    if(location.Length == 4)
-                    {
-                string[] save = location;
-                        location = new string[2];
-                        location[0] = "";
-                        location[1] = "";
-                    }
-                    XmlElement xNoteInLocation = doc.CreateElement("x");
-                    xNoteInLocation.InnerText = location[0];
-                    XmlElement yNoteInLocation = doc.CreateElement("y");
-                    yNoteInLocation.InnerText = location[1];
-                locationNote.AppendChild(xNoteInLocation);
-                locationNote.AppendChild(yNoteInLocation);
-
-                XmlElement statusNote = doc.CreateElement("status");
-                    XmlElement valueNoteInstatus = doc.CreateElement("value");
-                    valueNoteInstatus.InnerText = value;
-                    XmlElement timestampNoteInstatus = doc.CreateElement("timestamp");
-                    timestampNoteInstatus.InnerText = timestamp;
-                statusNote.AppendChild(valueNoteInstatus);
-                statusNote.AppendChild(timestampNoteInstatus);
-
-                XmlElement batteryStatusNote = doc.CreateElement("batteryStatus");
-                batteryStatusNote.InnerText = batteryStatus;
-
-            parkingSpotNote.AppendChild(idNote);
-            parkingSpotNote.AppendChild(typeNote);
-            parkingSpotNote.AppendChild(nameNote);
-            parkingSpotNote.AppendChild(locationNote);
-            parkingSpotNote.AppendChild(statusNote);
-            parkingSpotNote.AppendChild(batteryStatusNote);
-            return parkingSpotNote;
-        }
-
-        public static string[] readLocation(string id, string spotID)
-        {
-            string[][] local;
-            switch(id)
+            Location location = null;
+            foreach (LocationExcel locationExcel in locationCampus)
             {
-                case "Campus_2_A_Park1":
-                    local = locationCampus_2_A_Park1;
-                    break;
-                default:
-                    return null;
-            }
-            for(int i=0; i< local[0].Length; i++)
-            {
-                if (local[0][i] == spotID)
+                if (locationExcel.parkingID.Equals(id))
                 {
-                    return local[1][i].Split(',');
+                    location = locationExcel.giveLocation(name);
                 }
             }
-            return null;
+            if (location == null)
+            {
+                Console.WriteLine("Fail to find the location!\n");
+                return "";
+            }
+
+            XmlElement spot = new ParkingSpot(id, "ParkingSpot", name, value, DateTime.Parse(timestamp), batteryStatus, location).ToXML(doc);
+
+            doc.AppendChild(spot);
+            return doc.OuterXml;
         }
 
-        public static string[][] ReadFromExcelFile(string filename)
+        public static int ReadXMLParkingLocation(string filename)
         {
-            checkIfFileExistOrFail(filename);
-            var excelAplication = new Excel.Application();
-            excelAplication.Visible = false;
-
-            //Opens the excel file
-            var excelWorkbook = excelAplication.Workbooks.Open(@"" + strDocuments + "" + filename);
-            var excelWorksheet = (Excel.Worksheet)excelWorkbook.ActiveSheet;
-
-            int count = 7;
-
-            while(excelWorksheet.Cells[count, 1].Value != null)
+            if (!FunctionHelper.checkIfFileExist(filename))
             {
-                count++;
-            }
-            count -= 6;
-            string[][] locationParks = new string[2][];
-            locationParks[0] = new string[count];
-            locationParks[1] = new string[count];
-
-            for (int y = 0, exel = 6; y < count; y++, exel++)
-            {
-                locationParks[0][y] = excelWorksheet.Cells[exel, 1].Value==null ? string.Empty : excelWorksheet.Cells[exel, 1].Value;
-                locationParks[1][y] = excelWorksheet.Cells[exel, 2].Value == null ? string.Empty : excelWorksheet.Cells[exel, 2].Value;
+                return 0;
             }
 
-            excelWorkbook.Close();
-            excelAplication.Quit();
+            XmlDocument doc = new XmlDocument();
+            doc.Load(FunctionHelper.givePatch(filename));
 
-            //Don't forget to free the memory used by excel objects
-            ReleaseComObjects(excelWorksheet);
-            ReleaseComObjects(excelWorkbook);
-            ReleaseComObjects(excelAplication);
-            return locationParks;
-        }
+            XmlNode root = doc.SelectSingleNode("/parkingLocation");
+            foreach(XmlNode provider in root.SelectNodes("//provider"))
+            {
+                providers.Add(new Provider(provider));
+            }
 
-        public static void checkIfFileExistOrFail(string filename)
-        {
-            if (!File.Exists(@""+strDocuments+""+filename))
+            int refreshRate = Convert.ToInt32(root.Attributes["refreshRate"].Value);
+            string unitsString = root.Attributes["units"].Value;
+            int units = 0;
+            switch (unitsString)
             {
-                throw new FileNotFoundException();
+                case "minutes":
+                    units = 60000;
+                    break;
+                case "seconds":
+                    units = 1000;
+                    break; 
+                default:
+                    units = 1;
+                    break;
             }
-        }
-
-        public static Boolean checkIfFileExist(string filename)
-        {
-            if (File.Exists(@"" + strDocuments + "" + filename))
+            if(refreshRate * units == 0)
             {
-                return true;
+                Console.WriteLine("Erro to read the time!");
+                return 2000;
             }
-            return false;
-        }
-
-        private static void ReleaseComObjects(object obs)
-        {
-            try
-            {
-                System.Runtime.InteropServices.Marshal.ReleaseComObject(obs);
-                obs = null;
-                GC.Collect();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex.ToString());
-            }
+            int time = refreshRate*units;
+            Console.WriteLine("Was found: " + providers.Count+" providers, they will be update "+ time + " in "+time+ " milliseconds!");
+            return time;
         }
     }
 }

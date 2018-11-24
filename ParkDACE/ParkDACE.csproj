@@ -33,12 +33,17 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="M2Mqtt.Net, Version=4.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\M2Mqtt.4.3.0.0\lib\net45\M2Mqtt.Net.dll</HintPath>
+    </Reference>
     <Reference Include="ParkingSensorNodeDll, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>lib\ParkingSensorNodeDll.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,16 +52,56 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="classes\FunctionHelper.cs" />
+    <Compile Include="classes\Location.cs" />
+    <Compile Include="classes\LocationExcel.cs" />
+    <Compile Include="classes\Mosquitto.cs" />
+    <Compile Include="classes\ParkingSpot.cs" />
+    <Compile Include="classes\Provider.cs" />
+    <Compile Include="Connected Services\ServiceParkingSpots\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="files\Campus_2_A_Park1.xlsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Include="Connected Services\ServiceParkingSpots\ParkDACE.ServiceParkingSpots.ParkinSpot.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
     </None>
+    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots.wsdl" />
+    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots1.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="files\Campus_2_B_Park2.xlsx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="files\Campus_2_A_Park1.xlsx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="packages.config" />
+    <None Include="Properties\DataSources\System.Xml.Linq.XElement.datasource" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots.disco" />
+    <None Include="Connected Services\ServiceParkingSpots\configuration91.svcinfo" />
+    <None Include="Connected Services\ServiceParkingSpots\configuration.svcinfo" />
+    <None Include="Connected Services\ServiceParkingSpots\Reference.svcmap">
+      <Generator>WCF Proxy Generator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <Content Include="bin\Debug\files\ParkingLocation.xml" />
+    <Content Include="files\ParkingLocation.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="lib\ParkingSensorNodeDll.dll" />
   </ItemGroup>
   <ItemGroup>
@@ -90,6 +135,9 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadataStorage Include="Connected Services\ServiceParkingSpots\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
