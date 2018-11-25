@@ -1,6 +1,7 @@
 ﻿using ParkSS.classes;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,12 +13,12 @@ namespace ParkSS
 {
     class Program
     {
+        private string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["ParkSS.Properties.Settings.connStr"].ConnectionString;
         private static string[] ips = new string[] { "broker.hivemq.com", "127.0.0.1" };
         private static string[] topics = new string[] { "ParkDACE\\all", "ParkDACE\\Campus_2_A_Park1", "ParkDACE\\Campus_2_B_Park2" };
 
         static void Main(string[] args)
         {
-
             //MqttClient mClientALL = Mosquitto.connectMosquitto(ips);
             //Mosquitto.configFunctionMosquitto(mClientALL, mClientALL_MqttMsgPublishReceived);
             
@@ -50,6 +51,16 @@ namespace ParkSS
             parkingSpot.writeOnScreen();
 
             /////// Send data to BD
+
+            int spotId = DatabaseHelper.getSpotId(parkingSpot.name);
+            int parkId = DatabaseHelper.getParkIdOfSpot(parkingSpot.name);
+
+            //Spot existe logo o parque tambem existe
+            //Regista-se a alteração do spot
+            if (spotId != 0)
+            {
+                DatabaseHelper.insertRegister(spotId, parkId, parkingSpot.value, parkingSpot.timestamp);
+            }
         }
 
         public static void mClientCampus_2_B_Park2_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)  //Recebe tudo do park Campus_2_B_Park2
@@ -61,5 +72,7 @@ namespace ParkSS
 
             /////// Send data to BD
         }
+
+        
     }
 }
