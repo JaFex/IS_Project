@@ -51,7 +51,8 @@ namespace SmartPark.Controllers
                 new ParkingSpot{ IdPark=1,Id=5,Available=0 },
             } ,Description= "PARQUE DO IPsdSAddsadawerqL"}
         };
-        public IEnumerable<Park> GetAllParks()
+
+        public IHttpActionResult GetAllParks()//ex 1
         {
             /*string query = "SELECT Parks from ParkDB where available == true;";
             SqlConnection connection = new SqlConnection(connectionString);
@@ -69,14 +70,61 @@ namespace SmartPark.Controllers
             {
                 return NotFound();
             }*/
-            return parks;
+            return Ok(parks);
         }
 
-        public IHttpActionResult GetPark(int id)
+        [Route("api/status")]
+        /*public IHttpActionResult GetParkForGivenMoment(int id, DateTime date)//ex 2
+         {
+             var park = parks.FirstOrDefault((p) => p.Id == id);
+             if (park == null) return NotFound();
+             return Ok(park.ParkingSpots);
+         [Route("api/statusStop")]
+         }*/
+
+        [Route("api/liststatus")]
+        /*public IHttpActionResult GetListStatusParkForPeriodMoment(DateTime date1, DateTime date2)//ex 3
+         {
+             var spots = Register.Find(
+             if (park == null) return NotFound();
+             return Ok(park.ParkingSpots);
+         }*/
+
+        /*public IHttpActionResult GetFreeParkForGivenMoment(int id, DateTime date)//ex 4
         {
             var park = parks.FirstOrDefault((p) => p.Id == id);
             if (park == null) return NotFound();
-            return Ok(park);
+            var freeParking = park.ParkingSpots.Find((p) => p.status == "free");
+            return Ok(freeParking);
+        }*/
+
+        [Route("api/spots/{id}")]
+        public IHttpActionResult GetPark(int id)//ex 5
+        {
+            var park = parks.FirstOrDefault((p) => p.Id == id);
+            if (park == null) return NotFound();
+            return Ok(park.ParkingSpots);
         }
+
+        /* public IHttpActionResult GetParkDescription(int id)//ex 6
+         {
+             var park = parks.FirstOrDefault((p) => p.Id == id);
+             if (park == null) return NotFound();
+             return Ok(park.Description);
+         }*/
+        /* public IHttpActionResult GetPark(int id,int spot_id,DateTime date)//ex 7
+         {
+             var park = parks.FirstOrDefault((p) => p.Id == id);
+             if (park == null) return NotFound();
+
+             return Ok(park.ParkingSpots);
+         }*/
+        public IHttpActionResult GetSpotSensor(int id)//ex 8
+        {
+            var park = parks.FirstOrDefault((p) => p.Id == id);
+            if (park == null) return NotFound();
+            return Ok(park.ParkingSpots);
+        }
+
     }
 }
