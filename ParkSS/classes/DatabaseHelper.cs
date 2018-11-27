@@ -75,11 +75,30 @@ namespace ParkSS.classes
             return value;
         }
 
-        public static string insertRegister(int spotId, int parkId, string status, DateTime timestamp)
+        private static int updateSpotBatteryStatus(int spotId, string batteryStatus)
         {
             SqlConnection conn = new SqlConnection(connectionString);
 
             conn.Open();
+
+            SqlCommand cmd = new SqlCommand("UPDATE Spots SET battery_status = @newStatus WHERE Id = @spotId", conn);
+            cmd.Parameters.AddWithValue("newStatus", batteryStatus);
+            cmd.Parameters.AddWithValue("spotId", spotId);
+
+            int value = cmd.ExecuteNonQuery();
+
+            conn.Close();
+
+            return value;
+        }
+
+        public static string insertRegister(int spotId, int parkId, string status, int batteryStatus, DateTime timestamp)
+        {
+            SqlConnection conn = new SqlConnection(connectionString);
+
+            conn.Open();
+
+            string batStatusStr = batteryStatus == 1 ? "Good" : "Low";
 
             SqlCommand cmd = new SqlCommand("INSERT INTO dbo.registers (spot_id, park_id, status, timestamp) VALUES (@spot_id, @park_id, @status, @timestamp)", conn);
             cmd.Parameters.AddWithValue("@spot_id", spotId);
@@ -90,7 +109,18 @@ namespace ParkSS.classes
             int nReg = cmd.ExecuteNonQuery();
             conn.Close();
 
+            conn.Open();
+
+            cmd = new SqlCommand("INSERT INTO batteryregisters (spot_id, battery_status, timestamp) VALUES (@spot_id, @batteryStatus, @timestamp)", conn);
+            cmd.Parameters.AddWithValue("@spot_id", spotId);
+            cmd.Parameters.AddWithValue("@batteryStatus", batStatusStr);
+            cmd.Parameters.AddWithValue("@timestamp", timestamp);
+
+            cmd.ExecuteNonQuery();
+            conn.Close();
+
             int vUpdate = updateSpotStatus(spotId, status);
+            int bsUpdate = updateSpotBatteryStatus(spotId, batStatusStr);
 
             if (nReg > 0 && vUpdate > 0)
             {

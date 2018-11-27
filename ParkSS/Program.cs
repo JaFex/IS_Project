@@ -55,12 +55,19 @@ namespace ParkSS
             int spotId = DatabaseHelper.getSpotId(parkingSpot.name);
             int parkId = DatabaseHelper.getParkIdOfSpot(parkingSpot.name);
 
+            string result = "";
+
             //Spot existe logo o parque tambem existe
             //Regista-se a alteração do spot
             if (spotId != 0)
             {
-                DatabaseHelper.insertRegister(spotId, parkId, parkingSpot.value, parkingSpot.timestamp);
+                result = DatabaseHelper.insertRegister(spotId, parkId, parkingSpot.value, int.Parse(parkingSpot.batteryStatus), parkingSpot.timestamp);
+            } else
+            {
+                result = "********************** Spot Not Found **************************";
             }
+
+            Console.WriteLine(result);
         }
 
         public static void mClientCampus_2_B_Park2_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)  //Recebe tudo do park Campus_2_B_Park2
