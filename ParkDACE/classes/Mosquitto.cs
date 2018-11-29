@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
@@ -21,26 +22,59 @@ namespace ParkDACE.classes
             MqttClient mClient = null;
             foreach (string ip in ips)
             {
-                Console.Write("Try to connect to the IP: " + ip + "....");
+                Console.Write("Try to connect to the IP: '" + ip + "'....");
                 try
                 {
                     mClient = new MqttClient(ip);
                     mClient.Connect(Guid.NewGuid().ToString());
-                } catch(Exception e)
+                }
+                catch (Exception e)
                 {
                     mClient = null;
                 }
                 if (mClient != null && mClient.IsConnected)
                 {
-                    Console.WriteLine("Success to connect to the IP: " + ip + "!\n");
+                    Console.WriteLine("Success to connect to the IP: '" + ip + "'!");
                     return mClient;
                 }
                 else
                 {
-                    Console.WriteLine("Fail to connect to the IP: " + ip + "!\n");
+                    Console.WriteLine("Fail to connect to the IP: '" + ip + "'!");
                 }
             }
             return null;
+        }
+
+        public static MqttClient connectMosquittoGuaranteeThatTryToConnect(string[] ips)
+        {
+            MqttClient mClient = null;
+            int count = 1;
+            int timeToReconnect = 5000;
+            do
+            {
+                mClient = connectMosquitto(ips);
+                if (mClient == null)
+                {
+                    if (count > 2)
+                    {
+                        Console.Write("\nReached the limit of attempts to connect! Do you want to try again? [Y/N]: ");
+                        ConsoleKey response = Console.ReadKey(false).Key;
+                        Console.WriteLine();
+                        if (response == ConsoleKey.N)
+                        {
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Try to reconnect in " + timeToReconnect / 1000 + " seconds");
+                        Thread.Sleep(timeToReconnect);
+                        count++;
+                        timeToReconnect = timeToReconnect * 2;
+                    }
+                }
+            } while (mClient == null);
+            return mClient;
         }
 
         public static void configFunctionMosquitto(MqttClient mClient, MqttMsgPublishEventHandler client_MqttMsgPublishReceived)
@@ -92,12 +126,12 @@ namespace ParkDACE.classes
 
         public static void publishMosquitto(MqttClient mClient, string[] topics, string message)
         {
-            if(mClient != null && mClient.IsConnected)
+            if (mClient != null && mClient.IsConnected)
             {
                 foreach (string topic in topics)
                 {
                     mClient.Publish(topic, Encoding.UTF8.GetBytes(message));
-                    Console.WriteLine("\t...information send (topic: '"+topic+"', message_size: '"+message.Length+"')");
+                    Console.WriteLine("\t...information send (topic: '" + topic + "', message_size: '" + message.Length + "')");
                 }
             }
             else
@@ -114,7 +148,7 @@ namespace ParkDACE.classes
 
         public static void subscribedMosquitto(MqttClient mClient, string[] topics)
         {
-            byte[] qosLevels = { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE, MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE};
+            byte[] qosLevels = { MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE };
             foreach (string topic in topics)
             {
                 mClient.Subscribe(new string[] { topic }, qosLevels);

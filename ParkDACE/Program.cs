@@ -49,7 +49,11 @@ namespace ParkDACE
             Console.WriteLine("####################END-SETTINGS###################\n");
 
             Console.WriteLine("#####################MOSQUITTO#####################");
-            mClient = Mosquitto.connectMosquitto(ips);
+            mClient = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ips);
+            if (mClient == null || !mClient.IsConnected)
+            {
+                return;
+            }
             Console.WriteLine("Topics that will be send data "+ topicsString + "!");
             Console.WriteLine("###################END-MOSQUITTO###################\n");
 
