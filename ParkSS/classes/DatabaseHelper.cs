@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ParkSS.exceptions;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
@@ -13,17 +14,9 @@ namespace ParkSS.classes
         private static string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["ParkSS.Properties.Settings.connStr"].ConnectionString;
         private static SqlConnection conn = new SqlConnection(connectionString);
 
-        public static string newRegister(ParkingSpot parkingSpot) {
-
-            //Verificar se o spot existe
-            //Se não
-            //Park existe
-            //Se não
-            //Criar Park
-            //Criar novo spot
-            //inserir novo registo
-            //inserir novo registo battery
-
+        public static string newRegister(ParkingSpot parkingSpot)
+        {
+            
             string response = "INSERTED";
 
             conn.Open();
@@ -32,18 +25,83 @@ namespace ParkSS.classes
             {
                 if (!parkExists(parkingSpot.id))
                 {
-                    int i = insertNewPark(parkingSpot.id);
+                    int a = insertNewPark(parkingSpot.id);
+
+                    if(a < 1)
+                    {
+                        throw new ParkNotInsertedException("ERROR: Park could not be inserted");
+                    }
                 }
 
-                insertNewSpot(parkingSpot.id, parkingSpot.name, parkingSpot.latitude, parkingSpot.longitude, parkingSpot.value, parkingSpot.batteryStatus);
+                int i = insertNewSpot(parkingSpot.id, parkingSpot.name, parkingSpot.latitude, parkingSpot.longitude, parkingSpot.value, parkingSpot.batteryStatus);
+
+                if(i < 1)
+                {
+                    throw new SpotNotInsertedException("ERROR: Spot could not be inserted");
+                }
             }
             //Este insert so deve acontecer se o estado for diferente do anterior
-            insertNewSpotRegister(parkingSpot.id, parkingSpot.name, parkingSpot.value, parkingSpot.timestamp);
+            if(!spotValueEquals(parkingSpot.name, parkingSpot.value))
+            {
+                int i = insertNewSpotRegister(parkingSpot.id, parkingSpot.name, parkingSpot.value, parkingSpot.timestamp);
+
+                if(i < 1)
+                {
+                    throw new RegisterNotInsertedException("ERROR: Register of spot status could not be inserted");
+                }
+            } else
+            {
+                response = "DUPLICATED";
+            }
+
             //Este insert so deve acontecer se o estado for diferente do anterior
-            insertNewBatteryRegister(parkingSpot.name, parkingSpot.batteryStatus, parkingSpot.timestamp);
+            if (!spotBatteryValueEquals(parkingSpot.name, parkingSpot.batteryStatus))
+            {
+                int i = insertNewBatteryRegister(parkingSpot.name, parkingSpot.batteryStatus, parkingSpot.timestamp);
+
+                if (i < 1)
+                {
+                    throw new RegisterNotInsertedException("ERROR: Register of spot battery status could not be inserted");
+                }
+            }
 
             conn.Close();
 
+            return response;
+        }
+
+        private static bool spotBatteryValueEquals(string spotName, string batteryStatus)
+        {
+            string batStatusStr = batteryStatus.Equals("1") ? "Good" : "Low";
+            SqlCommand cmd = new SqlCommand("SELECT battery_status FROM Spots WHERE id = @spotName", conn);
+            cmd.Parameters.AddWithValue("@spotName", spotName);
+            SqlDataReader reader = cmd.ExecuteReader();
+            bool response = false;
+            if (reader.Read())
+            {
+                if (batStatusStr.Equals(reader["battery_status"]))
+                {
+                    response = true;
+                }
+            }
+            reader.Close();
+            return response;
+        }
+
+        private static bool spotValueEquals(string spotName, string status)
+        {
+            SqlCommand cmd = new SqlCommand("SELECT status FROM Spots WHERE id = @spotName", conn);
+            cmd.Parameters.AddWithValue("@spotName", spotName);
+            SqlDataReader reader = cmd.ExecuteReader();
+            bool response = false;
+            if (reader.Read())
+            {
+                if (status.Equals(reader["status"]))
+                {
+                    response = true;
+                }
+            }
+            reader.Close();
             return response;
         }
 

@@ -1,4 +1,5 @@
 ﻿using ParkSS.classes;
+using ParkSS.exceptions;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -96,8 +97,17 @@ namespace ParkSS
             parkingSpot.writeOnScreen();
 
             /////// Send data to BD
+            string response = null;
             Console.WriteLine("#################################################################################");
-            string response = DatabaseHelper.newRegister(parkingSpot);
+            try
+            {
+                response = DatabaseHelper.newRegister(parkingSpot);
+            }
+            catch (Exception ex)
+            {
+                response = ex.Message;
+            }
+                
             Console.WriteLine("             " + response);
             Console.WriteLine("#################################################################################");
 
@@ -111,8 +121,16 @@ namespace ParkSS
             parkingSpot.writeOnScreen();
 
             /////// Send data to BD
+            string response = null;
             Console.WriteLine("#################################################################################");
-            string response = DatabaseHelper.newRegister(parkingSpot);
+            try
+            {
+                response = DatabaseHelper.newRegister(parkingSpot);
+            }
+            catch (ParkNotInsertedException ex)
+            {
+                response = ex.Message;
+            }
             Console.WriteLine("             " + response);
             Console.WriteLine("#################################################################################");
         }
