@@ -7,10 +7,12 @@ namespace SmartPark.Models
 {
     public class Park
     {
-        public int Id { get; set; }
-        public int Available { get; set; }
-        public List<ParkingSpot> ParkingSpots { get; set; }
-        public string Description { get; set; }
+        public string Id { get; set; }
+        public int number_spot { get; set; }
+        public int number_special_spot { get; set; }
+        public string description { get; set; }
+        public string operating_hours { get; set; }
+        public List<Spot> spots{ get; set; }
 
         /* 
          public string Description { get; set; }

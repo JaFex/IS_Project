@@ -92,7 +92,13 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\Park.cs" />
-    <Compile Include="Models\ParkingSpot.cs" />
+    <Compile Include="Models\Park_ex2.cs" />
+    <Compile Include="Models\Park_ex5.cs" />
+    <Compile Include="Models\Spot_ex2.cs" />
+    <Compile Include="Models\Spot_ex5.cs" />
+    <Compile Include="Models\Spot_ex7.cs" />
+    <Compile Include="Models\Spot.cs" />
+    <Compile Include="Models\Spot_ex8.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -115,6 +121,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ParkSS\ParkSS.csproj">
+      <Project>{2f021d48-dd1c-4b2d-aa4d-5d27192710e2}</Project>
+      <Name>ParkSS</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
