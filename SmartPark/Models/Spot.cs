@@ -14,15 +14,5 @@ namespace SmartPark.Models
         public string battery_status { get; set; }
         public string park_id { get; set; }
         public DateTime timestamp { get; set; }
-
-        public Spot()
-        {
-            id = "";
-            latitude = "";
-            longitude = "";
-            status = "";
-            battery_status = "";
-            park_id = "";
-        }
     }
 }

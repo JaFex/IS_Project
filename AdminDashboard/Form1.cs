@@ -180,7 +180,7 @@ namespace AdminDashboard
             byte[] data = webClient.DownloadData(url);
             ms = new MemoryStream(data);
             ser = new DataContractSerializer(typeof(T));
-            return (T)ser.ReadObject(ms);
+            return (T) ser.ReadObject(ms);
         }
 
         private string toStringSpotDetails(Spot spot)
@@ -194,7 +194,7 @@ namespace AdminDashboard
         {
             return string.Format("Park Details: \n \tId: [{0}] \n \tNumber of Spots: [{1}] \n " +
                                 "\tNumber of Special Spots: [{2}] \n \tDescription: [{3}] \n \tOperating Hours: [{4}]\n"
-                                , park.Id, park.number_spot, park.number_special_spot, park.description, park.operating_hours);
+                                , park.id, park.number_spot, park.number_special_spot, park.description, park.operating_hours);
         }
 
         private string toStringSpots(List<Spot> spots)
@@ -214,7 +214,7 @@ namespace AdminDashboard
 
         private string toStringParkOfSpots(Park park)
         {
-            string auxString = string.Format("Park [{0}] contains: \n", park.Id);
+            string auxString = string.Format("Park [{0}] contains: \n", park.id);
             foreach (Spot spot in park.spots)
             {
                 auxString += string.Format("\tSpot Id: {0} has  {1} Battery.\n", spot.id, spot.battery_status);
@@ -227,7 +227,7 @@ namespace AdminDashboard
             string auxString = "";
             foreach (Park park in parks)
             {
-                auxString += string.Format("Park [{0}] is available.\n", park.Id);
+                auxString += string.Format("Park [{0}] is available.\n", park.id);
             }
             return auxString;
         }

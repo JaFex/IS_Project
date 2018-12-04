@@ -66,14 +66,15 @@ namespace SmartPark.Controllers
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
                 List<Park> parks = new List<Park>();
-                if (!reader.HasRows) return NotFound();
+                if (!reader.HasRows) { return NotFound(); }
                 while (reader.Read())
                 {
-                    Park park = new Park();
-                    park.Id = reader.GetString(0);
-                    parks.Add(park);
+                    parks.Add(new Park{
+                        id = reader.GetString(0)
+                    });
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(parks);
             }
             catch (Exception ex)
@@ -116,7 +117,7 @@ namespace SmartPark.Controllers
                     if (!reader.IsDBNull(2)) spot.timestamp = reader.GetDateTime(2);
                     spots.Add(spot);
                 }
-                park.Id = aux;
+                park.id = aux;
                 park.spots = spots;
                 reader.Close();
                 return Ok(park);
@@ -144,7 +145,7 @@ namespace SmartPark.Controllers
                 return Content(HttpStatusCode.BadRequest, "ERROR PARSING DATE");
             }
             string query = "SELECT spot_id,status,timestamp " +
-            "FROM Registers WHERE park_id = '" + str_id + "' AND timestamp BETWEEN '" + initialDateString + "' AND '" + finalDateString + "';";
+            "FROM Registers WHERE park_id = '" + str_id + "';";//' AND timestamp >='" + initialDateString + "' AND timestamp <= '" + finalDateString + "';";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
@@ -152,21 +153,24 @@ namespace SmartPark.Controllers
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                Park park = new Park();
                 List<Spot> spots = new List<Spot>();
-                string aux = str_id;
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    Spot spot = new Spot();
-                    spot.id = reader.GetString(0);
-                    if (!reader.IsDBNull(1)) spot.status = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.timestamp = reader.GetDateTime(2);
-                    spots.Add(spot);
+                    if(!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2))
+                    {
+                        spots.Add(new Spot{
+                            id = reader.GetString(0),
+                            status = reader.GetString(1),
+                            timestamp = reader.GetDateTime(2)
+                        });
+                    }
                 }
-                park.Id = aux;
-                park.spots = spots;
                 reader.Close();
+                Park park = new Park {
+                    id = str_id,
+                    spots = spots
+                };
                 return Ok(park);
             }
             catch (Exception ex)
@@ -212,7 +216,7 @@ namespace SmartPark.Controllers
                     if (!reader.IsDBNull(2)) spot.timestamp = reader.GetDateTime(2);
                     spots.Add(spot);
                 }
-                park.Id = aux;
+                park.id = aux;
                 park.spots = spots;
                 reader.Close();
                 return Ok(park);
@@ -241,8 +245,8 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    if (park.Id == null) {
-                        park.Id = reader.GetString(0);
+                    if (park.id == null) {
+                        park.id = reader.GetString(0);
                     }
                     spot = new Spot();
                     spot.id = reader.GetString(1);
@@ -275,7 +279,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    park.Id = reader.GetString(0);
+                    park.id = reader.GetString(0);
                     if (!reader.IsDBNull(1)) park.number_spot = reader.GetInt32(1);
                     if (!reader.IsDBNull(2)) park.number_special_spot = reader.GetInt32(2);
                     if (!reader.IsDBNull(3)) park.description = reader.GetString(3); ;
