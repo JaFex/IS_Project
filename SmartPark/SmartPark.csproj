@@ -87,18 +87,11 @@
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\ParksController.cs" />
-    <Compile Include="Controllers\ParkingSpotController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\Park.cs" />
-    <Compile Include="Models\Park_ex2.cs" />
-    <Compile Include="Models\Park_ex5.cs" />
-    <Compile Include="Models\Spot_ex2.cs" />
-    <Compile Include="Models\Spot_ex5.cs" />
-    <Compile Include="Models\Spot_ex7.cs" />
     <Compile Include="Models\Spot.cs" />
-    <Compile Include="Models\Spot_ex8.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

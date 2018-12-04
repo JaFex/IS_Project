@@ -11,7 +11,9 @@ namespace SmartPark.Controllers
 {
     public class ParksController : ApiController
     {
-        string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["SmartPark.Properties.Settings.ConnStr"].ConnectionString;
+        private string formatDateRecevedByUrl = "dd-MM-yyyy h_mm_ss tt";
+        private string formatDateOfBD = "dd/MM/yyyy";
+        private string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["SmartPark.Properties.Settings.ConnStr"].ConnectionString;
         /*List<Park> parks = new List<Park>
          {
              new Park{ Id = 1, Available=1,ParkingSpots = new List<ParkingSpot>{
@@ -55,10 +57,9 @@ namespace SmartPark.Controllers
         [Route("api/parks")]
         public IHttpActionResult GetAllParks()//ex1 http://localhost:51352/api/parks FEITOOO
         {
-            string query = "SELECT * from Parks;";
+            string query = "SELECT * FROM Parks;";
             try
             {
-                //string str_return = " ";
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
                 
@@ -86,17 +87,15 @@ namespace SmartPark.Controllers
             DateTime date;
             try
             {
-               
-                //str_date="11/27/2018 6:04:01 PM";
-                date = DateTime.ParseExact(str_date.Replace('_', ':').Replace('-', '/'), "MM/dd/yyyy h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
+                date = getDateFromString(str_date);
             }
             catch (Exception ex)
             {
                 //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest,"ERROR PARSING DATE");
             }
-            string query = "select Registers.spot_id ,Registers.status ,Registers.timestamp " +
-            "from Registers where Registers.park_id = '" + str_id + "'AND Registers.timestamp = '" + date + "';";
+            string query = "SELECT Registers.spot_id ,Registers.status ,Registers.timestamp " +
+            "FROM Registers WHERE Registers.park_id = '" + str_id + "'AND Registers.timestamp = '" + date + "';";
 
             try
             {
@@ -105,16 +104,16 @@ namespace SmartPark.Controllers
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                Park_ex2 park = new Park_ex2();
-                List<Spot_ex2> spots = new List<Spot_ex2>();
-                Spot_ex2 spot = new Spot_ex2();
+                Park park = new Park();
+                List<Spot> spots = new List<Spot>();
+                Spot spot = new Spot();
                 string aux =str_id;
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    spot.Id = reader.GetString(0);
+                    spot.id = reader.GetString(0);
                     if (!reader.IsDBNull(1)) spot.status = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.date = reader.GetDateTime(2);
+                    if (!reader.IsDBNull(2)) spot.timestamp = reader.GetDateTime(2);
                     spots.Add(spot);
                 }
                 park.Id = aux;
@@ -129,23 +128,23 @@ namespace SmartPark.Controllers
         }
 
 
-        [Route("api/parks/{str_id}/date1/{str_date1}/date2/{str_date2}")]
-        public IHttpActionResult GetListStatusParkForPeriodMoment(string str_id,string str_date1, string str_date2)//ex 3 http://localhost:51352/api/parks/Campus_2_A_Park1/date1/11-27-2018%206_04_01%20PM/date2/11-27-2018%206_20_33%20PM feitoooo
+        [Route("api/parks/{str_id}/date1/{str_initial_date}/date2/{str_final_date}")]
+        public IHttpActionResult GetListStatusParkForPeriodMoment(string str_id,string str_initial_date, string str_final_date)//ex 3 http://localhost:51352/api/parks/Campus_2_A_Park1/date1/11-27-2018%206_04_01%20PM/date2/11-27-2018%206_20_33%20PM feitoooo
         {
-            DateTime date1;
-            DateTime date2;
+            string initialDateString;
+            string finalDateString;
             try
             {
-                date1 = DateTime.ParseExact(str_date1.Replace('_', ':').Replace('-', '/'), "MM/dd/yyyy h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
-                date2 = DateTime.ParseExact(str_date2.Replace('_', ':').Replace('-', '/'), "MM/dd/yyyy h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
+                initialDateString = getDateOfFormateOfDB(str_initial_date);
+                finalDateString = getDateOfFormateOfDB(str_final_date);
             }
             catch (Exception ex)
             {
                 //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest, "ERROR PARSING DATE");
             }
-            string query = "select Registers.spot_id ,Registers.status ,Registers.timestamp " +
-            "from Registers where Registers.park_id = '" + str_id + "'AND Registers.timestamp between '" + date1 + "' and '" + date2 + "';";
+            string query = "SELECT spot_id,status,timestamp " +
+            "FROM Registers WHERE park_id = '" + str_id + "' AND timestamp BETWEEN '" + initialDateString + "' AND '" + finalDateString + "';";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
@@ -153,17 +152,16 @@ namespace SmartPark.Controllers
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                Park_ex2 park = new Park_ex2();
-                List<Spot_ex2> spots = new List<Spot_ex2>();
-               // Spot_ex2 spot = new Spot_ex2();
+                Park park = new Park();
+                List<Spot> spots = new List<Spot>();
                 string aux = str_id;
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    Spot_ex2 spot = new Spot_ex2();
-                    spot.Id = reader.GetString(0);
+                    Spot spot = new Spot();
+                    spot.id = reader.GetString(0);
                     if (!reader.IsDBNull(1)) spot.status = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.date = reader.GetDateTime(2);
+                    if (!reader.IsDBNull(2)) spot.timestamp = reader.GetDateTime(2);
                     spots.Add(spot);
                 }
                 park.Id = aux;
@@ -185,7 +183,7 @@ namespace SmartPark.Controllers
             DateTime date;
             try
             {
-                date = DateTime.ParseExact(str_date.Replace('_', ':').Replace('-', '/'), "MM/dd/yyyy h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
+                date = getDateFromString(str_date);
             }
             catch (Exception ex)
             {
@@ -202,16 +200,16 @@ namespace SmartPark.Controllers
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                Park_ex2 park = new Park_ex2();
-                List<Spot_ex2> spots = new List<Spot_ex2>();
-                Spot_ex2 spot = new Spot_ex2();
+                Park park = new Park();
+                List<Spot> spots = new List<Spot>();
+                Spot spot = new Spot();
                 string aux = str_id;
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    spot.Id = reader.GetString(0);
+                    spot.id = reader.GetString(0);
                     if (!reader.IsDBNull(1)) spot.status = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.date = reader.GetDateTime(2);
+                    if (!reader.IsDBNull(2)) spot.timestamp = reader.GetDateTime(2);
                     spots.Add(spot);
                 }
                 park.Id = aux;
@@ -237,17 +235,17 @@ namespace SmartPark.Controllers
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                List<Spot_ex5> spots = new List<Spot_ex5>();
-                Park_ex5 park = new Park_ex5();
-                Spot_ex5 spot;
+                List<Spot> spots = new List<Spot>();
+                Park park = new Park();
+                Spot spot;
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
                     if (park.Id == null) {
                         park.Id = reader.GetString(0);
                     }
-                    spot = new Spot_ex5();
-                    spot.Id = reader.GetString(1);
+                    spot = new Spot();
+                    spot.id = reader.GetString(1);
                     spots.Add(spot);
                 }
                 park.spots = spots;
@@ -299,7 +297,7 @@ namespace SmartPark.Controllers
             DateTime date;//
             try
             {
-                date = DateTime.ParseExact(str_date.Replace('_', ':').Replace('-', '/'), "MM/dd/yyyy h:mm:ss tt", System.Globalization.CultureInfo.InvariantCulture);
+                date = getDateFromString(str_date);
             }
             catch (Exception ex)
             {
@@ -320,13 +318,13 @@ namespace SmartPark.Controllers
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                Spot_ex7 spot = new Spot_ex7();//para mostrar timestamp
+                Spot spot = new Spot();//para mostrar timestamp
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
                     if (!reader.IsDBNull(0))
                     {
-                        spot.Id = reader.GetString(0);
+                        spot.id = reader.GetString(0);
                         //return NotFound();
                     }
                     if (!reader.IsDBNull(1)) spot.latitude = reader.GetString(1);
@@ -357,12 +355,12 @@ namespace SmartPark.Controllers
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                List<Spot_ex8> spots = new List<Spot_ex8>();
+                List<Spot> spots = new List<Spot>();
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    Spot_ex8 spot = new Spot_ex8();
-                    spot.Id = reader.GetString(0);
+                    Spot spot = new Spot();
+                    spot.id = reader.GetString(0);
                     if (!reader.IsDBNull(1)) spot.battery_status = reader.GetString(1);
                     if (!reader.IsDBNull(2)) spot.park_id = reader.GetString(2);
                     spots.Add(spot);
@@ -387,13 +385,13 @@ namespace SmartPark.Controllers
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                List<Spot_ex8> spots = new List<Spot_ex8>();
+                List<Spot> spots = new List<Spot>();
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    Spot_ex8 spot = new Spot_ex8();
+                    Spot spot = new Spot();
 
-                    spot.Id = reader.GetString(0);
+                    spot.id = reader.GetString(0);
                     if (!reader.IsDBNull(1)) spot.battery_status = reader.GetString(1);
                     if (!reader.IsDBNull(2)) spot.park_id = reader.GetString(2);
                     spots.Add(spot);
@@ -445,5 +443,19 @@ namespace SmartPark.Controllers
             }
         }
 
+        private DateTime getDateFromString(string stringDate)
+        {
+            return DateTime.ParseExact(stringDate, formatDateRecevedByUrl, System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        private string getStringFromDate(DateTime date)
+        {
+            return Convert.ToDateTime(date).ToString(formatDateOfBD);
+        }
+
+        private string getDateOfFormateOfDB(string stringDate)
+        {
+            return getStringFromDate(getDateFromString(stringDate));
+        }
     }
 }
