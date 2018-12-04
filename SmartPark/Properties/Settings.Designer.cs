@@ -26,8 +26,8 @@ namespace SmartPark.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=D:\\escola\\EI-3\\IS\\Project\\IS_" +
-            "Project\\ParkSS\\ParkDB.mdf;Integrated Security=True")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\Andre\\Desktop\\Projec" +
+            "t_IS\\IS_Project\\ParkSS\\ParkDB.mdf;Integrated Security=True")]
         public string ConnStr {
             get {
                 return ((string)(this["ConnStr"]));

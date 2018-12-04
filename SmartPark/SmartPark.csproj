@@ -80,6 +80,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="App_Data\ParkDB.mdf" />
+    <Content Include="App_Data\ParkDB_log.ldf">
+      <DependentUpon>ParkDB.mdf</DependentUpon>
+    </Content>
     <Content Include="Global.asax" />
     <Content Include="index.html" />
     <Content Include="Web.config" />
@@ -112,9 +116,7 @@
       <DependentUpon>Web.config</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="App_Data\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\ParkSS\ParkSS.csproj">
       <Project>{2f021d48-dd1c-4b2d-aa4d-5d27192710e2}</Project>
