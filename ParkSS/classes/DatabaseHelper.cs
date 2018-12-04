@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +12,8 @@ namespace ParkSS.classes
     class DatabaseHelper
     {
 
-        private static string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["ParkSS.Properties.Settings.connStr"].ConnectionString;
+        private static DirectoryInfo dir = new DirectoryInfo("../../../SmartPark/App_Data");
+        private static string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=" + dir.FullName +"\\ParkDB.mdf;Integrated Security = True";
         private static SqlConnection conn = new SqlConnection(connectionString);
 
         public static string newRegister(ParkingSpot parkingSpot)
