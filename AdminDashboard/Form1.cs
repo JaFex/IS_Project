@@ -8,6 +8,8 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,9 +21,7 @@ namespace AdminDashboard
     {
         private static string format = "dd-MM-yyyy h_mm_ss tt";
         private static string str_url = "http://localhost:51352/api/parks";
-        private WebClient webClient;
-        private MemoryStream ms;
-        private DataContractSerializer ser;
+       
 
         public Form1()
         {
@@ -29,8 +29,6 @@ namespace AdminDashboard
             this.comboBoxInformation.SelectedIndex = 0;
             hideComponents(HideComponets.ALL, false);
             this.showText.ReadOnly = true;
-            this.webClient = new WebClient();
-            this.webClient.Headers["Content-type"] = "application/xml";
         }
 
 
@@ -169,18 +167,34 @@ namespace AdminDashboard
 
         private List<T> getList<T>(string url)
         {
+            WebClient webClient;
+            MemoryStream ms;
+            DataContractSerializer ser;
+            webClient = new WebClient();
+            webClient.Headers["Content-type"] = "application/xml";
             byte[] data = webClient.DownloadData(url);
             ms = new MemoryStream(data);
             ser = new DataContractSerializer(typeof(List<T>));
-            return ser.ReadObject(ms) as List<T>;
+            List<T> list = ser.ReadObject(ms) as List<T>;
+            ms.Dispose();
+            ms.Close();
+            return list;
         }
 
         private T getOne<T>(String url)
         {
+            WebClient webClient;
+            MemoryStream ms;
+            DataContractSerializer ser;
+            webClient = new WebClient();
+            webClient.Headers["Content-type"] = "application/xml";
             byte[] data = webClient.DownloadData(url);
             ms = new MemoryStream(data);
             ser = new DataContractSerializer(typeof(T));
-            return (T) ser.ReadObject(ms);
+            T obj = (T)ser.ReadObject(ms);
+            ms.Dispose();
+            ms.Close();
+            return obj;
         }
 
         private string toStringSpotDetails(Spot spot)
