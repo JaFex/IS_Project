@@ -48,12 +48,12 @@ namespace ParkSS
 
             String topicsSubscribe = "";
 
-            Console.WriteLine("####Config the topic "+ topicsParkDACE[0] + "####");
+            Console.WriteLine("####Config the mClientPark on topic " + topicsParkDACE[0] + "####");
             Mosquitto.configFunctionMosquitto(mClientPark, mClientPark_MqttMsgPublishReceived);
             topicsSubscribe += "\n\t\t\t-'"+topicsParkDACE[0]+"'";
             Console.WriteLine("#####################END-Config##################\n");
  
-            Console.WriteLine("####Config the topic new topics####");
+            Console.WriteLine("####Config the mClient on new topics####");
             Mosquitto.configFunctionMosquitto(mClient, mClient_MqttMsgPublishReceived);
             Console.WriteLine("#####################END-Config##################\n");
 
@@ -135,7 +135,7 @@ namespace ParkSS
         {
             wait.WaitOne();
             Console.WriteLine("#################################################################################");
-            Console.WriteLine("mClientALL-->> Topic: " + e.Topic);
+            Console.WriteLine("mClient-->> Topic: " + e.Topic);
             ParkingSpot parkingSpot = new ParkingSpot(Encoding.UTF8.GetString(e.Message));
             parkingSpot.writeOnScreen();
 

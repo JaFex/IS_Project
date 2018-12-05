@@ -71,10 +71,10 @@ namespace ParkDACE
                     dll.Initialize(ComputeResponse, time);
                 } else if (provider.connectionType.Equals("SOAP"))
                 {
-                    timer = new Timer(new TimerCallback(timer_SOAP), provider, 1000, time);
+                    timer = new Timer(new TimerCallback(timer_SOAP), provider, 1, time);
                 }
             }
-            timerParks = new Timer(new TimerCallback(timer_park_information), providers, 500, time);
+            timerParks = new Timer(new TimerCallback(timer_park_information), providers, 1, time);
             wait.Set();
         }
 
