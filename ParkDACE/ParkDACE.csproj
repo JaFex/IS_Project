@@ -56,6 +56,7 @@
     <Compile Include="classes\Location.cs" />
     <Compile Include="classes\LocationExcel.cs" />
     <Compile Include="classes\Mosquitto.cs" />
+    <Compile Include="classes\ParkingInformation.cs" />
     <Compile Include="classes\ParkingSpot.cs" />
     <Compile Include="classes\Provider.cs" />
     <Compile Include="Connected Services\ServiceParkingSpots\Reference.cs">

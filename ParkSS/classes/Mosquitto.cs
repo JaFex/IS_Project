@@ -53,7 +53,7 @@ namespace ParkSS.classes
             do
             {
                 mClient = connectMosquitto(ips);
-                if (mClient == null)
+                if (mClient == null || !mClient.IsConnected)
                 {
                     if (count > 2)
                     {
@@ -73,7 +73,7 @@ namespace ParkSS.classes
                         timeToReconnect = timeToReconnect * 2;
                     }
                 }
-            } while (mClient == null);
+            } while (mClient == null || !mClient.IsConnected);
             return mClient;
         }
 

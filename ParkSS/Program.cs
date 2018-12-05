@@ -1,4 +1,5 @@
-﻿using ParkSS.classes;
+﻿using ParkDACE.classes;
+using ParkSS.classes;
 using ParkSS.exceptions;
 using System;
 using System.Collections.Generic;
@@ -16,107 +17,125 @@ namespace ParkSS
     class Program
     {
         private string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["ParkSS.Properties.Settings.connStr"].ConnectionString;
-        private static string[] ipsParkDACE = new string[] { "broker.hivemq.com", "127.0.0.1" };
-        private static string[] topicsParkDACE = new string[] { "ParkDACE\\all", "ParkDACE\\Campus_2_A_Park1", "ParkDACE\\Campus_2_B_Park2" };
+        private static string[] ipsParkDACE = new string[] { "127.0.0.1", "broker.hivemq.com" };
+        private static string[] topicsParkDACE = new string[] { "ParkDACE\\", "ParkDACE\\all" };
+        private static List<string> parkingsNameSubscribed;
+        private static MqttClient mClient;
+        private static ManualResetEvent wait = new ManualResetEvent(false);
+
 
         static void Main(string[] args)
         {
             Console.WriteLine("#################################################################################");
             Console.WriteLine("###################################   INIT   ####################################");
             Console.WriteLine("#################################################################################\n\n");
+            parkingsNameSubscribed = new List<string>();
             Console.WriteLine("#####################MOSQUITTO#####################");
 
-            /*Console.WriteLine("####Connect to the topic " + topicsParkDACE[0] + "####");
-            MqttClient mClientALL = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
-            Console.WriteLine("#####################END-Connection##################\n");*/
-            Console.WriteLine("####Connect to the topic " + topicsParkDACE[1] + "####");
-            MqttClient mClientCampus_2_A_Park1 = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
-            Console.WriteLine("#####################END-Connection##################");
-            Console.WriteLine("####Connect to the topic " + topicsParkDACE[2] + "####\n");
-            MqttClient mClientCampus_2_B_Park2 = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
+            Console.WriteLine("####Connect to the topic " + topicsParkDACE[0] + "####");
+            MqttClient mClientPark = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
+            if (mClientPark == null || !mClientPark.IsConnected)
+            {
+                return;
+            }
+            Console.WriteLine("####Connect to the other topics ####");
+            mClient = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
+            if(mClient == null || !mClient.IsConnected)
+            {
+                return;
+            }
             Console.WriteLine("#####################END-Connection##################\n");
 
             String topicsSubscribe = "";
 
-            /*if (mClientALL != null || !mClientALL.IsConnected)
-            {
-                Console.WriteLine("####Config the topic "+ topicsParkDACE[0] + "####");
-                Mosquitto.configFunctionMosquitto(mClientALL, mClientALL_MqttMsgPublishReceived);
-                topicsSubscribe += "\n\t\t\t-'"+topicsParkDACE[0]+"'";
-                Console.WriteLine("#####################END-Config##################\n");
-            }*/
-            if (mClientCampus_2_A_Park1 != null || !mClientCampus_2_A_Park1.IsConnected)
-            {
-                Console.WriteLine("####Config the topic " + topicsParkDACE[0] + "####");
-                Mosquitto.configFunctionMosquitto(mClientCampus_2_A_Park1, mClientCampus_2_A_Park1_MqttMsgPublishReceived);
-                topicsSubscribe += "\n\t\t\t-'" + topicsParkDACE[1] + "'";
-                Console.WriteLine("#####################END-Config##################\n");
-            }
-            if (mClientCampus_2_B_Park2 != null || !mClientCampus_2_B_Park2.IsConnected)
-            {
-                Console.WriteLine("####Config the topic " + topicsParkDACE[0] + "####");
-                Mosquitto.configFunctionMosquitto(mClientCampus_2_B_Park2, mClientCampus_2_B_Park2_MqttMsgPublishReceived);
-                topicsSubscribe += "\n\t\t\t-'" + topicsParkDACE[2] + "'";
-                Console.WriteLine("#####################END-Config##################\n");
-            }
+            Console.WriteLine("####Config the topic "+ topicsParkDACE[0] + "####");
+            Mosquitto.configFunctionMosquitto(mClientPark, mClientPark_MqttMsgPublishReceived);
+            topicsSubscribe += "\n\t\t\t-'"+topicsParkDACE[0]+"'";
+            Console.WriteLine("#####################END-Config##################\n");
+ 
+            Console.WriteLine("####Config the topic new topics####");
+            Mosquitto.configFunctionMosquitto(mClient, mClient_MqttMsgPublishReceived);
+            Console.WriteLine("#####################END-Config##################\n");
 
             Console.WriteLine("You will be subscribe to the topic:" + topicsSubscribe);
             Console.WriteLine("#################END-Config-MOSQUITTO###############\n");
             Console.WriteLine("\n\n\n#################################################################################");
             Console.WriteLine("###########################   Starting Application   ############################");
             Console.WriteLine("#################################################################################\n\n");
-            /*if (mClientALL != null || !mClientALL.IsConnected)
-            {
-                Mosquitto.subscribedMosquitto(mClientALL, topics[0]);
-            }*/
-            if (mClientCampus_2_A_Park1 != null || !mClientCampus_2_A_Park1.IsConnected)
-            {
-                Mosquitto.subscribedMosquitto(mClientCampus_2_A_Park1, topicsParkDACE[1]);
-            }
-            if (mClientCampus_2_B_Park2 != null || !mClientCampus_2_B_Park2.IsConnected)
-            {
-                Mosquitto.subscribedMosquitto(mClientCampus_2_B_Park2, topicsParkDACE[2]);
-            }
+            Mosquitto.subscribedMosquitto(mClientPark, topicsParkDACE[0]);
+            wait.Set();
         }
 
-        public static void mClientALL_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e) //Recebe tudo independentement que park pretence
+        public static void mClientPark_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e) //Recebe tudo independentement que park pretence
         {
-            Console.WriteLine("#################################################################################");
-            Console.WriteLine("mClientALL-->> Topic: " + e.Topic);
-            ParkingSpot parkingSpot = new ParkingSpot(Encoding.UTF8.GetString(e.Message));
-            parkingSpot.writeOnScreen();
+            wait.WaitOne();
+            Console.WriteLine("#######################New Park########################################");
+            Console.WriteLine("mClientPark-->> Topic: " + e.Topic);
+            List<ParkingInformation> parkingsInformationsLocal = new List<ParkingInformation>();
+            List<string> parkingsNameLocal = new List<string>();
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(Encoding.UTF8.GetString(e.Message));
+            Boolean newTopics = false;
+            foreach (XmlNode parkingInformationNode in doc.SelectNodes("/list/parkingInformation"))
+            {
+                ParkingInformation parkingInformation = new ParkingInformation(parkingInformationNode.OuterXml);
+                parkingsInformationsLocal.Add(parkingInformation);
+                if (parkingsNameSubscribed.Count == 0 || !parkingsNameSubscribed.Exists(topicList => topicList.Equals(parkingInformation.id)))
+                {
+                    Console.Write(newTopics?"": "New topics subscribed: \n");
+                    newTopics = true;
+                    string topic = topicsParkDACE[0] + "" + parkingInformation.id;
+                    Console.WriteLine("\t\t|"+ topic);
+                    parkingsNameSubscribed.Add(parkingInformation.id);
+                    Mosquitto.subscribedMosquitto(mClient, topic);
+                }
+            }
+            Console.WriteLine();
 
-            /////// Send data to BD
-        }
 
-        public static void mClientCampus_2_A_Park1_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e) //Recebe tudo do park Campus_2_A_Park1
-        {
-            Console.WriteLine("#################################################################################");
-            Console.WriteLine("mClientCampus_2_A_Park1-->> Topic: " + e.Topic);
-            ParkingSpot parkingSpot = new ParkingSpot(Encoding.UTF8.GetString(e.Message));
-            parkingSpot.writeOnScreen();
+            //Verificar e unsubscribe os que já não existem
+            if (parkingsNameSubscribed.Count > 0)
+            {
+                List<string> auxList = parkingsNameLocal.Except(parkingsNameSubscribed).ToList();
+                if (auxList.Count > 0) {
+                    Console.WriteLine("Old topics Unsubscribed: ");
+                    foreach (string aux in auxList)
+                    {
+                        Console.WriteLine("\t\t|" + topicsParkDACE[0] + "" + aux);
+                        Mosquitto.unsubscribeMosquitto(mClient, new string[] { topicsParkDACE[0] + "" + aux });
+                        parkingsNameSubscribed.Remove(aux);
+                    }
+                }
+            }
 
             /////// Send data to BD
             string response = null;
             Console.WriteLine("#################################################################################");
-            try
+            foreach (ParkingInformation park in parkingsInformationsLocal)
             {
-                response = DatabaseHelper.newRegister(parkingSpot);
+                try
+                {
+                    response = DatabaseHelper.newParking(park);
+                }
+                catch (ParkNotInsertedException ex)
+                {
+                    response = ex.Message;
+                }
+                Console.WriteLine("\t\t\t"+ park.id + ":" + response);
             }
-            catch (Exception ex)
-            {
-                response = ex.Message;
-            }
-                
-            Console.WriteLine("             " + response);
             Console.WriteLine("#################################################################################");
+            wait.Set();
 
+
+            Console.WriteLine("##############################END New Park#################################");
+            wait.Set();
         }
 
-        public static void mClientCampus_2_B_Park2_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)  //Recebe tudo do park Campus_2_B_Park2
+        public static void mClient_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e) //Recebe tudo independentement que park pretence
         {
+            wait.WaitOne();
             Console.WriteLine("#################################################################################");
-            Console.WriteLine("mClientCampus_2_B_Park2-->> Topic: " + e.Topic);
+            Console.WriteLine("mClientALL-->> Topic: " + e.Topic);
             ParkingSpot parkingSpot = new ParkingSpot(Encoding.UTF8.GetString(e.Message));
             parkingSpot.writeOnScreen();
 
@@ -131,10 +150,9 @@ namespace ParkSS
             {
                 response = ex.Message;
             }
-            Console.WriteLine("             " + response);
+            Console.WriteLine("\t\t\t" + response);
             Console.WriteLine("#################################################################################");
+            wait.Set();
         }
-
-        
     }
 }

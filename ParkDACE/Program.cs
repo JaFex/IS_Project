@@ -14,9 +14,11 @@ namespace ParkDACE
     { 
         private static List<Provider> providers;
         private static List<LocationExcel> locationCampus;
+        private static Timer timerParks;
         private static Timer timer;
         private static MqttClient mClient;
-        private static string[] ips = new string[] { "broker.hivemq.com", "127.0.0.1" };
+        private static string[] ips = new string[] { "127.0.0.1", "broker.hivemq.com" };
+        private static ManualResetEvent wait = new ManualResetEvent(false);
 
         static void Main(string[] args)
         {
@@ -27,7 +29,7 @@ namespace ParkDACE
             locationCampus = new List<LocationExcel>();
             Console.WriteLine("######################SETTINGS#####################");
             int time = ReadXMLParkingLocation("ParkingLocation.xml");
-            string topicsString = "ParkDACE\\all";
+            string topicsString = "ParkDACE\\, ParkDACE\\all";
 
 
             foreach (Provider provider in providers)
@@ -72,16 +74,45 @@ namespace ParkDACE
                     timer = new Timer(new TimerCallback(timer_SOAP), provider, 1000, time);
                 }
             }
+            timerParks = new Timer(new TimerCallback(timer_park_information), providers, 500, time);
+            wait.Set();
+        }
+
+        private static void timer_park_information(object stateInfo)
+        {
+            wait.WaitOne();
+            Console.WriteLine("######################Park Information###########################");
+            List<Provider> providers = (List<Provider>)stateInfo;
+            XmlDocument doc = new XmlDocument();
+            XmlDeclaration dec = doc.CreateXmlDeclaration("1.0", null, null);
+            doc.AppendChild(dec);
+            XmlElement listNote = doc.CreateElement("list");
+            foreach (Provider provider in providers)
+            {
+                ParkingInformation parkingInformation = new ParkingInformation(provider.parkInfoID, provider.parkInfoDescription, provider.parkInfoNumberOfSpots, provider.parkInfoNumberOfSpecialSpots, provider.parkInfoOperatingHours);
+                listNote.AppendChild(parkingInformation.ToXML(doc));
+            }
             
+            doc.AppendChild(listNote);
+
+            Console.WriteLine(FunctionHelper.formatXmlToUnminifierString(doc));
+
+            Console.WriteLine("Sending information...");
+            Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\"}, doc.OuterXml);
+            Console.WriteLine("######################END-Park Information#####################\n\n");
+            wait.Set();
         }
 
         private static void timer_SOAP(object stateInfo)
         {
+            wait.WaitOne();
             Console.WriteLine("#######################SOAP########################");
             Provider provider = (Provider)stateInfo;
             Random random = new Random();
             var client = new SpotSensorsClient();
             XmlDocument doc = new XmlDocument();
+            XmlDeclaration dec = doc.CreateXmlDeclaration("1.0", null, null);
+            doc.AppendChild(dec);
 
             Location location = null;
             foreach (LocationExcel le in locationCampus)
@@ -108,10 +139,12 @@ namespace ParkDACE
             Console.WriteLine("Sending information...");
             Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\all", "ParkDACE\\"+provider.parkInfoID }, doc.OuterXml);
             Console.WriteLine("######################END-SOAP#####################\n\n");
+            wait.Set();
         }
 
         public static void ComputeResponse(string str)
         {
+            wait.WaitOne();
             Console.WriteLine("########################DLL########################");
             string[] strs = str.Split(';');
             //string[] ids = { "ParkID", "SpotID", "Timestamp", "ParkingSpotStatus", "BatteryStatus" };
@@ -124,6 +157,7 @@ namespace ParkDACE
             Console.WriteLine("Sending information...");
             Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\all", "ParkDACE\\" +strs[0] }, doc.OuterXml);
             Console.WriteLine("######################END-DLL######################\n\n");
+            wait.Set();
         }
 
         public static string CreateXMLSpot(string id, string name, string value, string timestamp, string batteryStatus)

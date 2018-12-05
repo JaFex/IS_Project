@@ -65,6 +65,7 @@
     <Compile Include="classes\DatabaseHelper.cs" />
     <Compile Include="classes\FunctionHelper.cs" />
     <Compile Include="classes\Mosquitto.cs" />
+    <Compile Include="classes\ParkingInformation.cs" />
     <Compile Include="classes\ParkingSpot.cs" />
     <Compile Include="exceptions\ParkNotInsertedException.cs" />
     <Compile Include="exceptions\RegisterNotInsertedException.cs" />
