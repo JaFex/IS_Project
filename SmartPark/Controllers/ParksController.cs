@@ -491,11 +491,15 @@ namespace SmartPark.Controllers
             }
         }
 
-        [Route("api/parks/{park_id}/occupancy_rate")]
-        public IHttpActionResult GetParkOccupancyRate(string park_id)//ex10 http://localhost:51352/api/parks/Campus_2_A_Park1/occupancy_rate
+        [Route("api/parks/{park_id}/rate/{str_state}")]
+        public IHttpActionResult GetParkOccupancyRate(string park_id, string str_state)//ex10 http://localhost:51352/api/parks/Campus_2_A_Park1/rate/occupied
         {
+            if (!str_state.ToUpper().Equals("FREE") && !str_state.ToUpper().Equals("OCCUPIED"))
+            {
+                return Content(HttpStatusCode.BadRequest, "ERROR STATE INVALID");
+            }
             string queryTotal = "select count(*) from Spots where park_id = @ParkID";
-            string queryTotalOccupied = "select count(*) from Spots where park_id = @ParkID AND UPPER(status) = UPPER('occupied')";
+            string queryTotalState = "select count(*) from Spots where park_id = @ParkID AND UPPER(status) = UPPER(@State)";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
@@ -504,7 +508,7 @@ namespace SmartPark.Controllers
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
                 int totalSpots = 0;
-                int totalOccupiedSpots = 0;
+                int totalStateSpots = 0;
                 if (!reader.HasRows)
                 {
                     reader.Close();
@@ -515,15 +519,16 @@ namespace SmartPark.Controllers
                     totalSpots = reader.GetInt32(0);
                 }
                 reader.Close();
-                command = new SqlCommand(queryTotalOccupied, connection);
+                command = new SqlCommand(queryTotalState, connection);
                 command.Parameters.AddWithValue("@ParkID", park_id);
+                command.Parameters.AddWithValue("@State", str_state);
                 reader = command.ExecuteReader();
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    totalOccupiedSpots = reader.GetInt32(0);
+                    totalStateSpots = reader.GetInt32(0);
                 }
-                float rate = (float)((totalOccupiedSpots * 100 )/ totalSpots);
+                float rate = (float)((totalStateSpots * 100 )/ totalSpots);
                 reader.Close();
                 return Ok(rate);
             }

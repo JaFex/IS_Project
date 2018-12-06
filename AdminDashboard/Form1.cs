@@ -20,8 +20,9 @@ namespace AdminDashboard
     public partial class Form1 : Form 
     {
         private static string format = "dd-MM-yyyy h_mm_ss tt";
-        private static string str_url = "http://localhost:51352/api/parks";
-       
+        private static string url_api_parks = "http://localhost:51352/api/parks";
+        private static string url_api_spots = "http://localhost:51352/api/spots";
+
 
         public Form1()
         {
@@ -64,7 +65,7 @@ namespace AdminDashboard
                 {
                     switch (int_option){
                         case 1:
-                            parks = getList<Park>(str_url);
+                            parks = getList<Park>(url_api_parks);
                             showText.Text = toStringParks(parks);
                             break;
                         case 2:
@@ -73,9 +74,9 @@ namespace AdminDashboard
                                 MessageBox.Show("Initial date and Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = str_url + "/" + parkIDString + "/date/" + inicialDateString;
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/date/" + inicialDateString;
                             park = getOne<Park>(str_url_edit);
-                            showText.Text = toStringParkOfSpots(park);
+                            showText.Text = toStringPark(park);
                             break;
                         case 3:
                             if (inicialDateLocal == null || finalDateLocal == null || parkIDString.Length == 0)
@@ -83,9 +84,9 @@ namespace AdminDashboard
                                 MessageBox.Show("Initial date, final date and Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = str_url + "/" + parkIDString + "/date1/" + inicialDateString + "/date2/" + finalDateString;
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/date/initial/" + inicialDateString + "/final/" + finalDateString;
                             park = getOne<Park>(str_url_edit);
-                            showText.Text = toStringParkOfSpots(park);
+                            showText.Text = toStringPark(park);
                             break;
                         case 4:
                             if (inicialDateLocal == null || parkIDString.Length == 0)
@@ -93,9 +94,9 @@ namespace AdminDashboard
                                 MessageBox.Show("Initial date and Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = str_url + "/" + parkIDString + "/date/" + inicialDateString + "/free";
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/date/" + inicialDateString + "/free";
                             park = getOne<Park>(str_url_edit);
-                            showText.Text = toStringParkOfSpots(park);
+                            showText.Text = toStringPark(park);
                             break;
                         case 5:
                             if (parkIDString.Length == 0)
@@ -103,9 +104,9 @@ namespace AdminDashboard
                                 MessageBox.Show("Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = str_url + "/" + parkIDString + "/spots";
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/spots";
                             park = getOne<Park>(str_url_edit);
-                            showText.Text = toStringParkOfSpots(park);
+                            showText.Text = toStringPark(park);
                             break;
                         case 6:
                             if (parkIDString.Length == 0)
@@ -113,9 +114,9 @@ namespace AdminDashboard
                                 MessageBox.Show("Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = str_url + "/" + parkIDString + "/details";
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/details";
                             park = getOne<Park>(str_url_edit);
-                            showText.Text = toStringParkDetails(park);
+                            showText.Text = toStringPark(park);
                             break;
                         case 7:
                             if (inicialDateLocal == null || spotIDString.Length == 0)
@@ -123,14 +124,14 @@ namespace AdminDashboard
                                 MessageBox.Show("Initial date and Spot ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = str_url + "/" + spotIDString + "/details/"+ inicialDateString + "/date";
+                            str_url_edit = url_api_spots + "/" + spotIDString + "/details/date/" + inicialDateString;
                             spot = getOne<Spot>(str_url_edit);
-                            showText.Text = toStringSpotDetails(spot);
+                            showText.Text = toStringSpot(spot);
                             break;
                         case 8:
-                            str_url = str_url + "/sensors";
+                            str_url_edit = url_api_spots + "/sensors/low";
                             spots = getList<Spot>(str_url_edit);
-                            showText.Text = toStringSpots(spots);
+                            showText.Text = toStringSpots(spots, false);
                             break;
                         case 9:
                             if (parkIDString.Length == 0)
@@ -138,9 +139,9 @@ namespace AdminDashboard
                                 MessageBox.Show("Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url = str_url + "/" + parkIDString + "/sensors";
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/sensors/low";
                             spots = getList<Spot>(str_url_edit);
-                            showText.Text = toStringSpots(spots);
+                            showText.Text = toStringSpots(spots, false);
                             break;
                         case 10:
                             if (parkIDString.Length == 0)
@@ -148,7 +149,7 @@ namespace AdminDashboard
                                 MessageBox.Show("Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url = str_url + "/" + parkIDString + "/rate";
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/rate/occupied";
                             float rate = getOne<float>(str_url_edit);
                             showText.Text = string.Format("Park "+ parkIDString + " has [{0}%] occupancy rate.", rate) + "\n" ;
                             break;
@@ -160,7 +161,7 @@ namespace AdminDashboard
                  catch (Exception ex)
                 {
                     showText.Text = ex.Message;
-                    MessageBox.Show("Error obtaining information, please try again.", "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    //MessageBox.Show("Error obtaining information, please try again.", "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -197,54 +198,57 @@ namespace AdminDashboard
             return obj;
         }
 
-        private string toStringSpotDetails(Spot spot)
-        {
-            return string.Format("Spot Details: \n \tId: [{0}] \n \tLatitude: [{1}] \n " +
-                                "\tLongitude: [{2}] \n \tStatus: [{3}] \n \tBattery Status: [{4}] \n \tTimestamp: [{5}] \n \tPark Id: [{6}]\n"
-                                , spot.id, spot.latitude, spot.longitude, spot.status, spot.battery_status, spot.timestamp, spot.park_id);
-        }
-
-        private string toStringParkDetails(Park park)
-        {
-            return string.Format("Park Details: \n \tId: [{0}] \n \tNumber of Spots: [{1}] \n " +
-                                "\tNumber of Special Spots: [{2}] \n \tDescription: [{3}] \n \tOperating Hours: [{4}]\n"
-                                , park.id, park.number_spot, park.number_special_spot, park.description, park.operating_hours);
-        }
-
-        private string toStringSpots(List<Spot> spots)
-        {
-            string last_park_id = "";
-            string auxString = "";
-            foreach (Spot spot in spots)
-            {
-                if(!last_park_id.Equals(spots[0].park_id))
-                {
-                    auxString += string.Format("Park [{0}] contains: \n", spots[0].park_id);
-                }
-                auxString += string.Format("\tSpot Id: {0} has  {1} Battery.\n", spot.id, spot.battery_status);
-            }
-            return auxString;
-        }
-
-        private string toStringParkOfSpots(Park park)
-        {
-            string auxString = string.Format("Park [{0}] contains: \n", park.id);
-            foreach (Spot spot in park.spots)
-            {
-                auxString += string.Format("\tSpot Id: {0} has  {1} Battery.\n", spot.id, spot.battery_status);
-            }
-            return auxString;
-        }
-
         private string toStringParks(List<Park> parks)
         {
             string auxString = "";
             foreach (Park park in parks)
             {
-                auxString += string.Format("Park [{0}] is available.\n", park.id);
+                auxString += "\n------------------------------------------------------\n";
+                auxString += toStringPark(park);
             }
             return auxString;
         }
+
+        private string toStringPark(Park park)
+        {
+            string auxString = "";
+            auxString += string.IsNullOrEmpty(park.id) ? "" : "Park Id: " + park.id;
+            auxString += park.numberOfSpots == 0 ? "" : "\nNumber Of Spots: " + park.numberOfSpots;
+            auxString += park.numberOfSpecialSpots == 0 ? "" : "\nNumber Of Special Spots: " + park.numberOfSpecialSpots;
+            auxString += string.IsNullOrEmpty(park.operatingHours) ? "" : "\nOperating Hours: " + park.operatingHours;
+            auxString += park.spots == null || park.spots.Count == 0 ? "" : "\nSpots: " + toStringSpots(park.spots, true);
+            return auxString;
+        }
+
+        private string toStringSpots(List<Spot> spots, Boolean park_unique)
+        {
+            string last_park_id = "";
+            string auxString = "";
+            foreach (Spot spot in spots)
+            {
+                if(!park_unique && !last_park_id.Equals(spot.parkID))
+                {
+                    auxString += "\n------------------------------------------------------";
+                    auxString += string.Format("\nPark [{0}] contains: \n", spot.parkID);
+                    last_park_id = spot.parkID;
+                }
+                auxString += toStringSpot(spot);
+            }
+            return auxString;
+        }
+
+        private string toStringSpot(Spot spot)
+        {
+            string auxString = "";
+            auxString += string.IsNullOrEmpty(spot.id) ? "" : "\n\t\tSpot Id: " + spot.id;
+            auxString += string.IsNullOrEmpty(spot.latitude) ? "" : "\n\t\t\tLatitude: " + spot.latitude;
+            auxString += string.IsNullOrEmpty(spot.longitude) ? "" : "\n\t\t\tLongitude: " + spot.longitude;
+            auxString += string.IsNullOrEmpty(spot.batteryStatus) ? "" : "\n\t\t\tBattery Status: " + spot.batteryStatus;
+            auxString += string.IsNullOrEmpty(spot.status) ? "" : "\n\t\t\tStatus: " + spot.status;
+            auxString += !spot.timestamp.HasValue ? "" : "\n\t\t\tTimestamp: " + spot.timestamp.Value;
+            return auxString;
+        }
+        
 
         private void comboBoxInformation_SelectedIndexChanged(object sender, EventArgs e)
         {
