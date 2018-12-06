@@ -109,7 +109,7 @@ namespace ParkSS
             }
 
             /////// Send data to BD
-            string response = null;
+            /*string response = null;
             Console.WriteLine("#################################################################################");
             foreach (ParkingInformation park in parkingsInformationsLocal)
             {
@@ -124,8 +124,7 @@ namespace ParkSS
                 Console.WriteLine("\t\t\t"+ park.id + ":" + response);
             }
             Console.WriteLine("#################################################################################");
-            wait.Set();
-
+            */
 
             Console.WriteLine("##############################END New Park#################################");
             wait.Set();

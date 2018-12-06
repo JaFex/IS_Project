@@ -14,7 +14,7 @@ namespace SmartPark.Controllers
     public class ParksController : ApiController
     {
         private string formatDateRecevedByUrl = "dd-MM-yyyy h_mm_ss tt";
-        private string formatDateOfBD = "dd/MM/yyyy";
+        private string formatDateOfBD = "dd/MM/yyyy h:mm:ss tt";
         private string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["SmartPark.Properties.Settings.ConnStr"].ConnectionString;
 
         [Route("api/parks")]
@@ -29,7 +29,11 @@ namespace SmartPark.Controllers
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
                 List<Park> parks = new List<Park>();
-                if (!reader.HasRows) { return NotFound(); }
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
                     parks.Add(new Park{
@@ -42,11 +46,11 @@ namespace SmartPark.Controllers
             }
             catch (Exception ex)
             {
-                return NotFound();
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
-        [Route("api/parks/{str_id}/date/{str_date}")] 
-        public IHttpActionResult GetSpotForGivenMoment(string str_id, string str_date)//ex2 http://localhost:51352/api/parks/Campus_2_A_Park1/date/11-27-2018%206_04_01%20PM //FEITOOOOO
+        [Route("api/parks/{park_id}/date/{str_date}")] 
+        public IHttpActionResult GetSpotForGivenMoment(string park_id, string str_date)//ex2 http://localhost:51352/api/parks/Campus_2_A_Park1/date/02-12-2018%206_28_22%20PM //FEITOOOOO
         {
             DateTime date;
             try
@@ -58,66 +62,84 @@ namespace SmartPark.Controllers
                 //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest,"ERROR PARSING DATE");
             }
-            string query = "SELECT Registers.spot_id ,Registers.status ,Registers.timestamp " +
-            "FROM Registers WHERE Registers.park_id = '" + str_id + "'AND Registers.timestamp = '" + date + "';";
+            string query = "SELECT spot_id,status,timestamp FROM Registers WHERE park_id = @ParkID AND timestamp <= @Date ORDER BY timestamp DESC;";
 
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@ParkID", park_id);
+                command.Parameters.AddWithValue("@Date", date);
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                Park park = new Park();
                 List<Spot> spots = new List<Spot>();
-                Spot spot = new Spot();
-                string aux =str_id;
-                if (!reader.HasRows) return NotFound();
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
-                    spot.id = reader.GetString(0);
-                    if (!reader.IsDBNull(1)) spot.status = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.timestamp = reader.GetDateTime(2);
-                    spots.Add(spot);
+                    if (!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2))
+                    {
+                        spots.Add(new Spot
+                        {
+                            id = reader.GetString(0),
+                            status = reader.GetString(1),
+                            parkID = park_id,
+                            timestamp = reader.GetDateTime(2)
+                        });
+                    }
                 }
-                park.id = aux;
-                park.spots = spots;
                 reader.Close();
-                return Ok(park);
+                return Ok(
+                    new Park
+                    {
+                        id = park_id,
+                        spots = spots
+                    }
+                );
             }
             catch (Exception ex)
             {
-                return Ok(ex.ToString());
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
 
 
-        [Route("api/parks/{str_id}/date1/{str_initial_date}/date2/{str_final_date}")]
-        public IHttpActionResult GetListStatusParkForPeriodMoment(string str_id,string str_initial_date, string str_final_date)//ex 3 http://localhost:51352/api/parks/Campus_2_A_Park1/date1/11-27-2018%206_04_01%20PM/date2/11-27-2018%206_20_33%20PM feitoooo
+        [Route("api/parks/{park_id}/date/initial/{str_initial_date}/final/{str_final_date}")]
+        public IHttpActionResult GetListStatusParkForPeriodMoment(string park_id, string str_initial_date, string str_final_date)//ex3 http://localhost:51352/api/parks/Campus_2_A_Park1/date/initial/02-12-2018%206_28_22%20PM/final/02-12-2018%206_55_22%20PM feitoooo
         {
-            string initialDateString;
-            string finalDateString;
+            DateTime initialDate;
+            DateTime finalDate;
             try
             {
-                initialDateString = getDateOfFormateOfDB(str_initial_date);
-                finalDateString = getDateOfFormateOfDB(str_final_date);
+                initialDate = getDateFromString(str_initial_date);
+                finalDate = getDateFromString(str_final_date);
             }
             catch (Exception ex)
             {
                 //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest, "ERROR PARSING DATE");
             }
-            string query = "SELECT spot_id,status,timestamp " +
-            "FROM Registers WHERE park_id = '" + str_id + "' AND timestamp >='" + initialDateString + "' AND timestamp <= '" + finalDateString + "';";
+            string query = "SELECT spot_id,status,timestamp FROM Registers WHERE park_id = @ParkID AND (timestamp BETWEEN @InitialDate AND @FinalDate);";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@ParkID", park_id);
+                command.Parameters.AddWithValue("@InitialDate", initialDate);
+                command.Parameters.AddWithValue("@FinalDate", finalDate);
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
                 List<Spot> spots = new List<Spot>();
-                if (!reader.HasRows) return NotFound();
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
                     if(!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2))
@@ -125,27 +147,30 @@ namespace SmartPark.Controllers
                         spots.Add(new Spot{
                             id = reader.GetString(0),
                             status = reader.GetString(1),
+                            parkID = park_id,
                             timestamp = reader.GetDateTime(2)
                         });
                     }
                 }
                 reader.Close();
-                Park park = new Park {
-                    id = str_id,
-                    spots = spots
-                };
-                return Ok(park);
+                return Ok(
+                    new Park
+                    {
+                        id = park_id,
+                        spots = spots
+                    }
+                );
             }
             catch (Exception ex)
             {
-                return Ok(ex.ToString());
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
         
         
 
-        [Route("api/parks/{str_id}/date/{str_date}/free")]
-        public IHttpActionResult GetFreeParkForGivenMoment(string str_id, string str_date)//ex4 http://localhost:51352/api/parks/Campus_2_A_Park1/date/11-27-2018%206_16_31%20PM
+        [Route("api/parks/{park_id}/date/{str_date}/{str_state}")]
+        public IHttpActionResult GetParkForGivenMomentInGivenState(string park_id, string str_date, string str_state)//ex4 http://localhost:51352/api/parks/Campus_2_A_Park1/date/02-12-2018%206_28_22%20PM/free
         {
             DateTime date;
             try
@@ -157,109 +182,156 @@ namespace SmartPark.Controllers
                 //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest, "ERROR PARSING DATE");
             }
-            string query = "select Registers.spot_id ,Registers.status ,Registers.timestamp " +
-            "from Registers where Registers.park_id = '" + str_id + "'AND Registers.timestamp = '" + date + "' AND Registers.status = 'free';";
+
+            if(!str_state.ToUpper().Equals("FREE") && !str_state.ToUpper().Equals("OCCUPIED"))
+            {
+                return Content(HttpStatusCode.BadRequest, "ERROR STATE INVALID");
+            }
+
+            string query = "SELECT spot_id,status,timestamp FROM Registers WHERE park_id = @ParkID AND timestamp <= @Date AND UPPER(status) = @State ORDER BY timestamp DESC;";
 
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@ParkID", park_id);
+                command.Parameters.AddWithValue("@Date", date);
+                command.Parameters.AddWithValue("@State", str_state.ToUpper());
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
                 Park park = new Park();
                 List<Spot> spots = new List<Spot>();
                 Spot spot = new Spot();
-                string aux = str_id;
-                if (!reader.HasRows) return NotFound();
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
-                    spot.id = reader.GetString(0);
-                    if (!reader.IsDBNull(1)) spot.status = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.timestamp = reader.GetDateTime(2);
-                    spots.Add(spot);
+                    if (!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2))
+                    {
+                        spots.Add(new Spot
+                        {
+                            id = reader.GetString(0),
+                            status = reader.GetString(1),
+                            parkID = park_id,
+                            timestamp = reader.GetDateTime(2)
+                        });
+                    }
                 }
-                park.id = aux;
-                park.spots = spots;
                 reader.Close();
-                return Ok(park);
+                return Ok(
+                    new Park
+                    {
+                        id = park_id,
+                        spots = spots
+                    }
+                );
             }
             catch (Exception ex)
             {
-                return Ok(ex.ToString());
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
         
-        [Route("api/parks/{str_id}/spots")]
-        public IHttpActionResult GetPark(string str_id)//ex5 http://localhost:51352/api/parks/Campus_2_A_Park1/spots //feito
+        [Route("api/parks/{park_id}/spots")]
+        public IHttpActionResult GetPark(string park_id)//ex5 http://localhost:51352/api/parks/Campus_2_A_Park1/spots //feito
         {
-            string query="select Distinct Registers.park_id, Registers.spot_id"+
-             " from Registers where Registers.park_id = '"+str_id+"';";
+            string query= "SELECT id,latitude,longitude,status,battery_status FROM Spots WHERE park_id = @ParkID ORDER BY status ASC, battery_status DESC;";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@ParkID", park_id);
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
                 List<Spot> spots = new List<Spot>();
-                Park park = new Park();
-                Spot spot;
-                if (!reader.HasRows) return NotFound();
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
-                    if (park.id == null) {
-                        park.id = reader.GetString(0);
+                    if (!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2) && !reader.IsDBNull(3) && !reader.IsDBNull(4))
+                    {
+                        spots.Add(new Spot
+                        {
+                            id = reader.GetString(0),
+                            latitude = reader.GetString(1),
+                            longitude = reader.GetString(2),
+                            status = reader.GetString(3),
+                            batteryStatus = reader.GetString(4)
+                        });
                     }
-                    spot = new Spot();
-                    spot.id = reader.GetString(1);
-                    spots.Add(spot);
                 }
-                park.spots = spots;
                 reader.Close();
-                return Ok(park);
+                return Ok(
+                    new Park
+                    {
+                        id = park_id,
+                        spots = spots
+                    }
+                );
             }
             catch (Exception ex)
             {
-                return Ok(ex.ToString());
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
 
-        [Route("api/parks/{str_id}/details")]
-        public IHttpActionResult GetParkDescription(string str_id)//ex6  http://localhost:51352/api/parks/Campus_2_A_Park1/details /feito
+        [Route("api/parks/{park_id}/details")]
+        public IHttpActionResult GetParkDescription(string park_id)//ex6  http://localhost:51352/api/parks/Campus_2_A_Park1/details /feito
         {
-            string query = "SELECT * from Parks where Parks.Id= '"+ str_id+"';";
+            string query = "SELECT id,number_spots,number_special_spot,description,operating_hours FROM Parks WHERE id= @ParkID;";
             try
             {
                 //string str_return = " ";
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@ParkID", park_id);
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                Park park = new Park();
-                //List<Park> parks = new List<Park>();
-                if (!reader.HasRows) return NotFound();
+                Park park = null;
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
-                    park.id = reader.GetString(0);
-                    if (!reader.IsDBNull(1)) park.number_spot = reader.GetInt32(1);
-                    if (!reader.IsDBNull(2)) park.number_special_spot = reader.GetInt32(2);
-                    if (!reader.IsDBNull(3)) park.description = reader.GetString(3); ;
-                    if (!reader.IsDBNull(4)) park.operating_hours = reader.GetString(4);
-                    //parks.Add(park);
+                    if (!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2) && !reader.IsDBNull(3) && !reader.IsDBNull(4))
+                    {
+                        park = new Park
+                        {
+                            id = reader.GetString(0),
+                            numberOfSpots = Convert.ToInt32(reader.GetDecimal(1).ToString()),
+                            numberOfSpecialSpots = Convert.ToInt32(reader.GetDecimal(2).ToString()),
+                            description = reader.GetString(3),
+                            operatingHours = reader.GetString(4)
+                        };
+                    }
+                }
+                if(park == null)
+                {
+                    reader.Close();
+                    return NotFound();
                 }
                 reader.Close();
                 return Ok(park);
             }
             catch (Exception ex)
             {
-                return NotFound();
+                return Content(HttpStatusCode.InternalServerError, ex.Message);// "INTERNAL ERROR");
             }
         }
         
-        [Route("api/parks/{str_id}/details/{str_date}/date")]
-        public IHttpActionResult GetPark(string str_id,string str_date)//ex7 http://localhost:51352/api/parks/A-8/details/11-27-2018%206_07_31%20PM/date FEITO
+        [Route("api/spots/{spot_id}/details/date/{str_date}")]
+        public IHttpActionResult GetPark(string spot_id, string str_date)//ex7 http://localhost:51352/api/spots/A-8/details/date/02-12-2018%206_28_22%20PM FEITO
         {
             DateTime date;//
             try
@@ -268,145 +340,196 @@ namespace SmartPark.Controllers
             }
             catch (Exception ex)
             {
-                //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest, "ERROR PARSING DATE");
             }
-            //string query = "select * from Registers where Registers.spot_id = '"+str_id+"' and Registers.timestamp =  '" + date+"'; ";
-            /*string query = "select Spots.Id , Spots.latitude, Spots.longitude, Spots.status, Spots.battery_status, Registers.park_id ,Registers.timestamp " +
-            "from Spots join Registers on Spots.Id = Registers.spot_id where Spots.Id = '" + str_id + "' and Registers.timestamp = '" + date + "'; ";*/
-            string query= " select newtab.spot_id ,Spots.latitude ,Spots.longitude ,Spots.status ,Spots.battery_status,Spots.park_id,newtab.timestamp from Spots join "+
-            "(select TOP 1 Registers.park_id , Registers.spot_id , Registers.timestamp "+
-            "from Registers where Registers.spot_id = '"+str_id+"' and Registers.timestamp <= '"+date+"' order by Registers.timestamp DEsc) as newtab "+
-            "on Spots.Id = newtab.spot_id;";
+
+            string query= "SELECT s.id,s.latitude,s.longitude,s.park_id,s.battery_status,n.timestamp,n.status FROM Spots s join " +
+            "(SELECT TOP 1 r.status,r.spot_id,r.timestamp FROM Registers r where r.spot_id = @SpotID AND r.timestamp <= @Date ORDER BY r.timestamp DESC) as n " +
+            "on s.id = n.spot_id;";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@SpotID", spot_id);
+                command.Parameters.AddWithValue("@Date", date);
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                Spot spot = new Spot();//para mostrar timestamp
-                if (!reader.HasRows) return NotFound();
+                Spot spot = null;
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
-                    if (!reader.IsDBNull(0))
+                    if (!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2) && !reader.IsDBNull(3) && !reader.IsDBNull(4) && !reader.IsDBNull(5) && !reader.IsDBNull(6))
                     {
-                        spot.id = reader.GetString(0);
-                        //return NotFound();
+                        spot = new Spot
+                        {
+                            id = reader.GetString(0),
+                            latitude = reader.GetString(1),
+                            longitude = reader.GetString(2),
+                            parkID = reader.GetString(3),
+                            batteryStatus = reader.GetString(4),
+                            timestamp = reader.GetDateTime(5),
+                            status = reader.GetString(6)
+                            
+                        };
                     }
-                    if (!reader.IsDBNull(1)) spot.latitude = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.longitude = reader.GetString(2);
-                    if (!reader.IsDBNull(3)) spot.status = reader.GetString(3);
-                    if (!reader.IsDBNull(4)) spot.battery_status = reader.GetString(4);
-                    if (!reader.IsDBNull(5)) spot.park_id = reader.GetString(5);
-                    if (!reader.IsDBNull(6)) spot.timestamp = reader.GetDateTime(6);
-                    
+                }
+                if (spot == null)
+                {
+                    reader.Close();
+                    return NotFound();
                 }
                 reader.Close();
                 return Ok(spot);
             }
             catch (Exception ex)
             {
-                return Ok(ex.ToString());
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
 
-        [Route("api/parks/sensors")]
-        public IHttpActionResult GetSpotSensor()//ex8 http://localhost:51352/api/parks/sensors
+        [Route("api/spots/sensors/{str_battery_status}")]
+        public IHttpActionResult GetSpotSensor(String str_battery_status)//ex8 http://localhost:51352/api/spots/sensors/low
         {
-            string query = "select Spots.Id,Spots.battery_status,Spots.park_id from Spots where Spots.battery_status = 'Low'";
+            if (!str_battery_status.ToUpper().Equals("LOW") && !str_battery_status.ToUpper().Equals("GOOD"))
+            {
+                return Content(HttpStatusCode.BadRequest, "ERROR BATTERY STATE INVALID");
+            }
+            string query = "SELECT id,battery_status,park_id FROM Spots WHERE UPPER(battery_status) = @BatteryStatus";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@BatteryStatus", str_battery_status.ToUpper());
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
                 List<Spot> spots = new List<Spot>();
-                if (!reader.HasRows) return NotFound();
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
-                    Spot spot = new Spot();
-                    spot.id = reader.GetString(0);
-                    if (!reader.IsDBNull(1)) spot.battery_status = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.park_id = reader.GetString(2);
-                    spots.Add(spot);
+                    if (!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2))
+                    {
+                        spots.Add(new Spot
+                        {
+                            id = reader.GetString(0),
+                            batteryStatus = reader.GetString(1),
+                            parkID = reader.GetString(2)
+
+                        });
+                    }
+                }
+                if (spots.Count == 0)
+                {
+                    reader.Close();
+                    return NotFound();
                 }
                 reader.Close();
                 return Ok(spots);
             }
             catch (Exception ex)
             {
-                return Ok(ex.ToString());
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
 
-        [Route("api/parks/{str_id}/sensors")]
-        public IHttpActionResult GetSpotSensorInPark(string str_id)//ex9 http://localhost:51352/api/parks/Campus_2_A_Park1/sensors
+        [Route("api/parks/{park_id}/sensors/{str_battery_status}")]
+        public IHttpActionResult GetSpotSensorInPark(string park_id, string str_battery_status)//ex9 http://localhost:51352/api/parks/Campus_2_A_Park1/sensors/low
         {
-            string query = "select Spots.Id,Spots.battery_status,Spots.park_id from Spots where Spots.battery_status = 'Low' and Spots.park_id='" + str_id + "'";
+            if (!str_battery_status.ToUpper().Equals("LOW") && !str_battery_status.ToUpper().Equals("GOOD"))
+            {
+                return Content(HttpStatusCode.BadRequest, "ERROR BATTERY STATE INVALID");
+            }
+            string query = "SELECT id,battery_status,park_id from Spots WHERE UPPER(battery_status) = @BatteryStatus AND Spots.park_id=@ParkID";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
                 SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@ParkID", park_id);
+                command.Parameters.AddWithValue("@BatteryStatus", str_battery_status.ToUpper());
 
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
                 List<Spot> spots = new List<Spot>();
-                if (!reader.HasRows) return NotFound();
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
-                    Spot spot = new Spot();
+                    if (!reader.IsDBNull(0) && !reader.IsDBNull(1) && !reader.IsDBNull(2))
+                    {
+                        spots.Add(new Spot
+                        {
+                            id = reader.GetString(0),
+                            batteryStatus = reader.GetString(1),
+                            parkID = reader.GetString(2)
 
-                    spot.id = reader.GetString(0);
-                    if (!reader.IsDBNull(1)) spot.battery_status = reader.GetString(1);
-                    if (!reader.IsDBNull(2)) spot.park_id = reader.GetString(2);
-                    spots.Add(spot);
+                        });
+                    }
+                }
+                if (spots.Count == 0)
+                {
+                    reader.Close();
+                    return NotFound();
                 }
                 reader.Close();
                 return Ok(spots);
             }
             catch (Exception ex)
             {
-                return Ok(ex.ToString());
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
 
-        [Route("api/parks/{str_id}/rate")]
-        public IHttpActionResult GetParkRate(string str_id)//ex10 
+        [Route("api/parks/{park_id}/occupancy_rate")]
+        public IHttpActionResult GetParkOccupancyRate(string park_id)//ex10 http://localhost:51352/api/parks/Campus_2_A_Park1/occupancy_rate
         {
-            //http://localhost:51352/api/parks/Campus_2_A_Park1/rate
-            string query1 = "select count(*) from Registers where Registers.park_id = '"+str_id+"' and Registers.status = 'free'";
-            string query2 = "select count(*) from Registers where Registers.park_id = '" + str_id+"' and Registers.status = 'occupied'";
+            string queryTotal = "select count(*) from Spots where park_id = @ParkID";
+            string queryTotalOccupied = "select count(*) from Spots where park_id = @ParkID AND UPPER(status) = UPPER('occupied')";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
-                SqlCommand command = new SqlCommand(query1, connection);
+                SqlCommand command = new SqlCommand(queryTotal, connection);
+                command.Parameters.AddWithValue("@ParkID", park_id);
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                int freeSpots = 0;
-                int occupiedSpots = 0;
-                if (!reader.HasRows) return NotFound();
+                int totalSpots = 0;
+                int totalOccupiedSpots = 0;
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
-                    freeSpots = reader.GetInt32(0);
+                    totalSpots = reader.GetInt32(0);
                 }
                 reader.Close();
-                command = new SqlCommand(query2, connection);
+                command = new SqlCommand(queryTotalOccupied, connection);
+                command.Parameters.AddWithValue("@ParkID", park_id);
                 reader = command.ExecuteReader();
                 if (!reader.HasRows) return NotFound();
                 while (reader.Read())
                 {
-                    occupiedSpots = reader.GetInt32(0);
+                    totalOccupiedSpots = reader.GetInt32(0);
                 }
-                int totalSpots = freeSpots + occupiedSpots;
-                float rate = (float)occupiedSpots/totalSpots*100;
+                float rate = (float)((totalOccupiedSpots * 100 )/ totalSpots);
                 reader.Close();
                 return Ok(rate);
             }
             catch (Exception ex)
             {
-                return Ok(ex.ToString());
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
 
