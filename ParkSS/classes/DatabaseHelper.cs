@@ -1,4 +1,5 @@
-﻿using ParkSS.exceptions;
+﻿using ParkDACE.classes;
+using ParkSS.exceptions;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -14,27 +15,14 @@ namespace ParkSS.classes
 
         private static DirectoryInfo dir = new DirectoryInfo("../../../SmartPark/App_Data");
         private static string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=" + dir.FullName +"\\ParkDB.mdf;Integrated Security = True";
-        private static SqlConnection conn = new SqlConnection(connectionString);
 
         public static string newRegister(ParkingSpot parkingSpot)
         {
             
             string response = "INSERTED";
 
-            conn.Open();
-
             if (!spotExists(parkingSpot.name))
             {
-                if (!parkExists(parkingSpot.id))
-                {
-                    int a = insertNewPark(parkingSpot.id);
-
-                    if(a < 1)
-                    {
-                        throw new ParkNotInsertedException("ERROR: Park could not be inserted");
-                    }
-                }
-
                 int i = insertNewSpot(parkingSpot.id, parkingSpot.name, parkingSpot.latitude, parkingSpot.longitude, parkingSpot.value, parkingSpot.batteryStatus);
 
                 if(i < 1)
@@ -67,13 +55,36 @@ namespace ParkSS.classes
                 }
             }
 
-            conn.Close();
+            return response;
+        }
 
+        public static string newParking(ParkingInformation park)
+        {
+
+            
+
+            String response = "";
+            try
+            {
+                if (!parkExists(park.id))
+                {
+                    response = insertNewPark(park);
+                }
+                else
+                {
+                    response = updatePark(park);
+                }
+            } catch(Exception ex)
+            {
+                throw new ParkNotInsertedException(ex.Message);
+            }
             return response;
         }
 
         private static bool spotBatteryValueEquals(string spotName, string batteryStatus)
         {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
             string batStatusStr = batteryStatus.Equals("1") ? "Good" : "Low";
             SqlCommand cmd = new SqlCommand("SELECT battery_status FROM Spots WHERE id = @spotName", conn);
             cmd.Parameters.AddWithValue("@spotName", spotName);
@@ -87,11 +98,14 @@ namespace ParkSS.classes
                 }
             }
             reader.Close();
+            conn.Close();
             return response;
         }
 
         private static bool spotValueEquals(string spotName, string status)
         {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
             SqlCommand cmd = new SqlCommand("SELECT status FROM Spots WHERE id = @spotName", conn);
             cmd.Parameters.AddWithValue("@spotName", spotName);
             SqlDataReader reader = cmd.ExecuteReader();
@@ -104,49 +118,98 @@ namespace ParkSS.classes
                 }
             }
             reader.Close();
+            conn.Close();
             return response;
         }
 
         private static int insertNewBatteryRegister(string name, string batteryStatus, DateTime timestamp)
         {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
             string batStatusStr = batteryStatus.Equals("1") ? "Good" : "Low";
             SqlCommand cmd = new SqlCommand("INSERT INTO BatteryRegisters (spot_id, status, timestamp) VALUES (@spotId, @status, @timestamp); UPDATE Spots SET battery_status = @status WHERE id = @spotId", conn);
             cmd.Parameters.AddWithValue("@spotId", name);
             cmd.Parameters.AddWithValue("@status", batStatusStr);
             cmd.Parameters.AddWithValue("@timestamp", timestamp);
-            return cmd.ExecuteNonQuery();
+            int i = cmd.ExecuteNonQuery();
+            conn.Close();
+            return i;
         }
 
         private static int insertNewSpotRegister(string id, string name, string value, DateTime timestamp)
         {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
             SqlCommand cmd = new SqlCommand("INSERT INTO Registers (spot_id, park_id, status, timestamp) VALUES (@spotId, @parkId, @status, @timestamp); UPDATE Spots SET status = @status WHERE id = @spotId", conn);
             cmd.Parameters.AddWithValue("@spotId", name);
             cmd.Parameters.AddWithValue("@parkId", id);
             cmd.Parameters.AddWithValue("@status", value);
             cmd.Parameters.AddWithValue("@timestamp", timestamp);
-            return cmd.ExecuteNonQuery();
+            int i = cmd.ExecuteNonQuery();
+            conn.Close();
+            return i;
         }
 
         private static int insertNewSpot(string id, string name, string latitude, string longitude, string value, string batteryStatus)
         {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
             string batStatusStr = batteryStatus.Equals("1") ? "Good" : "Low";
             SqlCommand cmd = new SqlCommand("INSERT INTO Spots (id, latitude, longitude, park_id) VALUES (@id, @latitude, @longitude, @parkId)", conn);
             cmd.Parameters.AddWithValue("@id", name);
             cmd.Parameters.AddWithValue("@latitude", latitude);
             cmd.Parameters.AddWithValue("@longitude", longitude);
             cmd.Parameters.AddWithValue("@parkId", id);
-            return cmd.ExecuteNonQuery();
+            int i = cmd.ExecuteNonQuery();
+            conn.Close();
+            return i;
         }
 
-        private static int insertNewPark(string id)
+        private static string insertNewPark(ParkingInformation park)
         {
-            SqlCommand cmd = new SqlCommand("INSERT INTO Parks (id) VALUES (@id)", conn);
-            cmd.Parameters.AddWithValue("@id", id);
-            return cmd.ExecuteNonQuery();
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
+            SqlCommand cmd = new SqlCommand("INSERT INTO Parks (id, description, operating_hours, number_spots, number_special_spots) VALUES (@id, @description, @operatingHours, @numberSpots, @numberSpecialSpots)", conn);
+            cmd.Parameters.AddWithValue("@id", park.id);
+            cmd.Parameters.AddWithValue("@description", park.description);
+            cmd.Parameters.AddWithValue("@operatingHours", park.operatingHours);
+            cmd.Parameters.AddWithValue("@numberSpots", park.numberOfSpots);
+            cmd.Parameters.AddWithValue("@numberSpecialSpots", park.numberOfSpecialSpots);
+            int i = cmd.ExecuteNonQuery();
+            conn.Close();
+
+            if(i < 1)
+            {
+                throw new ParkNotInsertedException("ERROR: Park could not be inserted");
+            }
+
+            return "INSERTED";
+        }
+
+        private static string updatePark(ParkingInformation park)
+        {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
+            SqlCommand cmd = new SqlCommand("UPDATE Parks SET description = @description, operating_hours = @operatingHours, number_spots = @numberSpots, number_special_spots = @numberSpecialSpots WHERE Id = @id", conn);
+            cmd.Parameters.AddWithValue("@description", park.description);
+            cmd.Parameters.AddWithValue("@operatingHours", park.operatingHours);
+            cmd.Parameters.AddWithValue("@numberSpots", park.numberOfSpots);
+            cmd.Parameters.AddWithValue("@numberSpecialSpots", park.numberOfSpecialSpots);
+            cmd.Parameters.AddWithValue("@id", park.id);
+            int i = cmd.ExecuteNonQuery();
+            conn.Close();
+            if (i < 1)
+            {
+                throw new ParkNotInsertedException("ERROR: Park could not be inserted");
+            }
+
+            return "UPDATED";
         }
 
         private static Boolean spotExists(string spotName)
         {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
             SqlCommand cmd = new SqlCommand("SELECT Id FROM Spots WHERE id = @spotName", conn);
             cmd.Parameters.AddWithValue("@spotName", spotName);
             SqlDataReader reader = cmd.ExecuteReader();
@@ -156,11 +219,14 @@ namespace ParkSS.classes
                 response = true;
             }
             reader.Close();
+            conn.Close();
             return response;
         }
 
         private static Boolean parkExists(string parkName)
         {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
             SqlCommand cmd = new SqlCommand("SELECT Id FROM Parks WHERE id = @parkName", conn);
             cmd.Parameters.AddWithValue("@parkName", parkName);
             SqlDataReader reader = cmd.ExecuteReader();
@@ -170,8 +236,21 @@ namespace ParkSS.classes
                 response = true;
             }
             reader.Close();
+            conn.Close();
             return response;
         }
+
+
+        //DEPRECATED
+        /*private static int insertNewPark(string id)
+        {
+            SqlCommand cmd = new SqlCommand("INSERT INTO Parks (id) VALUES (@id)", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            return cmd.ExecuteNonQuery();
+        }
+
+
+
 
         private static int updateSpotStatus(int spotId, string status)
         {
@@ -246,6 +325,6 @@ namespace ParkSS.classes
                 return "ERROR: Registering spot data";
             }
        
-        }
+        }*/
     }
 }
