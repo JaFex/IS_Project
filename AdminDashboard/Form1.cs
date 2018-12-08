@@ -1,5 +1,4 @@
-﻿using AdminDashboard.classes;
-using SmartPark.Models;
+﻿using SmartPark.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -22,12 +21,20 @@ namespace AdminDashboard
         private static string format = "dd-MM-yyyy h_mm_ss tt";
         private static string url_api_parks = "http://localhost:51352/api/parks";
         private static string url_api_spots = "http://localhost:51352/api/spots";
-
+        private enum STATE { OCCUPIED, FREE };
+        private enum BATTERY_STATE { GOOD, LOW };
+        private enum HideComponets { PARK, SPOT, SPOT_STATE, SPOT_BATTERY_STATE, INICIAL_DATE, FINAL_DATE, ALL }
 
         public Form1()
         {
             InitializeComponent();
+            this.spotStateComboBox.Items.Add(STATE.OCCUPIED);
+            this.spotStateComboBox.Items.Add(STATE.FREE);
+            this.spotBatteryStateComboBox.Items.Add(BATTERY_STATE.LOW);
+            this.spotBatteryStateComboBox.Items.Add(BATTERY_STATE.GOOD);
             this.comboBoxInformation.SelectedIndex = 0;
+            this.spotStateComboBox.SelectedIndex = 0;
+            this.spotBatteryStateComboBox.SelectedIndex = 0;
             hideComponents(HideComponets.ALL, false);
             this.showText.ReadOnly = true;
         }
@@ -57,6 +64,8 @@ namespace AdminDashboard
                 String finalDateString = Convert.ToDateTime(finalDateLocal).ToString(format, System.Globalization.CultureInfo.InvariantCulture);
                 String parkIDString = parkIdTextBox.Text;
                 String spotIDString = spotIdTextBox.Text;
+                String selectedSpotState = this.spotStateComboBox.GetItemText(this.spotStateComboBox.SelectedItem);
+                String selectedSpotBatteryState = this.spotBatteryStateComboBox.GetItemText(this.spotBatteryStateComboBox.SelectedItem);
                 Park park;
                 Spot spot;
                 List<Park> parks = new List<Park>();
@@ -89,12 +98,12 @@ namespace AdminDashboard
                             showText.Text = toStringPark(park);
                             break;
                         case 4:
-                            if (inicialDateLocal == null || parkIDString.Length == 0)
+                            if (inicialDateLocal == null || parkIDString.Length == 0 || !Enum.GetNames(typeof(STATE)).Contains(selectedSpotState))
                             {
-                                MessageBox.Show("Initial date and Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                MessageBox.Show("Initial date, spot state and Park ID can't be empty and need to be valid data, please fill valid data.", "Empty or invalid data fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = url_api_parks + "/" + parkIDString + "/date/" + inicialDateString + "/free";
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/date/" + inicialDateString + "/" + selectedSpotState;//free
                             park = getOne<Park>(str_url_edit);
                             showText.Text = toStringPark(park);
                             break;
@@ -129,27 +138,32 @@ namespace AdminDashboard
                             showText.Text = toStringSpot(spot);
                             break;
                         case 8:
-                            str_url_edit = url_api_spots + "/sensors/low";
+                            if (!Enum.GetNames(typeof(BATTERY_STATE)).Contains(selectedSpotBatteryState))
+                            {
+                                MessageBox.Show("Battery state need to be valid data, please fill valid data.", "Invalid fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                return;
+                            }
+                            str_url_edit = url_api_spots + "/sensors/" + selectedSpotBatteryState;
                             spots = getList<Spot>(str_url_edit);
                             showText.Text = toStringSpots(spots, false);
                             break;
                         case 9:
-                            if (parkIDString.Length == 0)
+                            if (parkIDString.Length == 0 || !Enum.GetNames(typeof(BATTERY_STATE)).Contains(selectedSpotBatteryState))
                             {
-                                MessageBox.Show("Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                MessageBox.Show("Park ID and battery state can't be empty and need to valid data, please fill or fill valid data.", "Empty or invalid fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = url_api_parks + "/" + parkIDString + "/sensors/low";
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/sensors/" + selectedSpotBatteryState;
                             spots = getList<Spot>(str_url_edit);
                             showText.Text = toStringSpots(spots, false);
                             break;
                         case 10:
-                            if (parkIDString.Length == 0)
+                            if (parkIDString.Length == 0 || !Enum.GetNames(typeof(STATE)).Contains(selectedSpotState))
                             {
-                                MessageBox.Show("Park ID can't be empty, please fill.", "Empty fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                MessageBox.Show("Park ID and spot state can't be empty and need to be valid data, please fill valid data.", "Empty or invalid data fills", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                                 return;
                             }
-                            str_url_edit = url_api_parks + "/" + parkIDString + "/rate/occupied";
+                            str_url_edit = url_api_parks + "/" + parkIDString + "/rate/" + selectedSpotState;
                             float rate = getOne<float>(str_url_edit);
                             showText.Text = string.Format("Park "+ parkIDString + " has [{0}%] occupancy rate.", rate) + "\n" ;
                             break;
@@ -276,6 +290,7 @@ namespace AdminDashboard
                 case 4:
                     hideComponents(HideComponets.PARK, true);
                     hideComponents(HideComponets.INICIAL_DATE, true);
+                    hideComponents(HideComponets.SPOT_STATE, true);
                     break;
                 case 5:
                     hideComponents(HideComponets.PARK, true);
@@ -288,12 +303,15 @@ namespace AdminDashboard
                     hideComponents(HideComponets.INICIAL_DATE, true);
                     break;
                 case 8:
+                    hideComponents(HideComponets.SPOT_BATTERY_STATE, true);
                     break;
                 case 9:
                     hideComponents(HideComponets.PARK, true);
+                    hideComponents(HideComponets.SPOT_BATTERY_STATE, true);
                     break;
                 case 10:
                     hideComponents(HideComponets.PARK, true);
+                    hideComponents(HideComponets.SPOT_STATE, true);
                     break;
                 default:
                     break;
@@ -316,6 +334,10 @@ namespace AdminDashboard
                     spotLabelFormat.Enabled = enable;
                     inicialDateGroupBox.Enabled = enable;
                     finalDateGroupBox.Enabled = enable;
+                    spotStateLabel.Enabled = enable;
+                    spotStateComboBox.Enabled = enable;
+                    spotBatteryStateLabel.Enabled = enable;
+                    spotBatteryStateComboBox.Enabled = enable;
                     break;
                 case HideComponets.PARK:
                     parkLabel.Enabled = enable;
@@ -326,6 +348,14 @@ namespace AdminDashboard
                     spotLabel.Enabled = enable;
                     spotIdTextBox.Enabled = enable;
                     spotLabelFormat.Enabled = enable;
+                    break;
+                case HideComponets.SPOT_STATE:
+                    spotStateLabel.Enabled = enable;
+                    spotStateComboBox.Enabled = enable;
+                    break;
+                case HideComponets.SPOT_BATTERY_STATE:
+                    spotBatteryStateLabel.Enabled = enable;
+                    spotBatteryStateComboBox.Enabled = enable;
                     break;
                 case HideComponets.INICIAL_DATE:
                     inicialDateGroupBox.Enabled = enable;

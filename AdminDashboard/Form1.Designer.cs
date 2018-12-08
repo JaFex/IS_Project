@@ -45,6 +45,10 @@
             this.finalDateGroupBox = new System.Windows.Forms.GroupBox();
             this.finalTime = new System.Windows.Forms.DateTimePicker();
             this.finalDate = new System.Windows.Forms.DateTimePicker();
+            this.spotStateComboBox = new System.Windows.Forms.ComboBox();
+            this.spotBatteryStateComboBox = new System.Windows.Forms.ComboBox();
+            this.spotStateLabel = new System.Windows.Forms.Label();
+            this.spotBatteryStateLabel = new System.Windows.Forms.Label();
             this.inicialDateGroupBox.SuspendLayout();
             this.finalDateGroupBox.SuspendLayout();
             this.SuspendLayout();
@@ -56,7 +60,7 @@
             this.label2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.label2.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 20F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(253, 9);
+            this.label2.Location = new System.Drawing.Point(205, 9);
             this.label2.Name = "label2";
             this.label2.Padding = new System.Windows.Forms.Padding(5);
             this.label2.Size = new System.Drawing.Size(294, 43);
@@ -126,7 +130,7 @@
             // parkLabel
             // 
             this.parkLabel.AutoSize = true;
-            this.parkLabel.Location = new System.Drawing.Point(83, 109);
+            this.parkLabel.Location = new System.Drawing.Point(18, 109);
             this.parkLabel.Name = "parkLabel";
             this.parkLabel.Size = new System.Drawing.Size(43, 13);
             this.parkLabel.TabIndex = 13;
@@ -135,7 +139,7 @@
             // spotLabel
             // 
             this.spotLabel.AutoSize = true;
-            this.spotLabel.Location = new System.Drawing.Point(445, 109);
+            this.spotLabel.Location = new System.Drawing.Point(275, 109);
             this.spotLabel.Name = "spotLabel";
             this.spotLabel.Size = new System.Drawing.Size(43, 13);
             this.spotLabel.TabIndex = 14;
@@ -143,14 +147,14 @@
             // 
             // parkIdTextBox
             // 
-            this.parkIdTextBox.Location = new System.Drawing.Point(86, 125);
+            this.parkIdTextBox.Location = new System.Drawing.Point(21, 125);
             this.parkIdTextBox.Name = "parkIdTextBox";
             this.parkIdTextBox.Size = new System.Drawing.Size(188, 20);
             this.parkIdTextBox.TabIndex = 18;
             // 
             // spotIdTextBox
             // 
-            this.spotIdTextBox.Location = new System.Drawing.Point(448, 125);
+            this.spotIdTextBox.Location = new System.Drawing.Point(278, 125);
             this.spotIdTextBox.Name = "spotIdTextBox";
             this.spotIdTextBox.Size = new System.Drawing.Size(188, 20);
             this.spotIdTextBox.TabIndex = 19;
@@ -158,7 +162,7 @@
             // parkLabelFormat
             // 
             this.parkLabelFormat.AutoSize = true;
-            this.parkLabelFormat.Location = new System.Drawing.Point(83, 148);
+            this.parkLabelFormat.Location = new System.Drawing.Point(18, 148);
             this.parkLabelFormat.Name = "parkLabelFormat";
             this.parkLabelFormat.Size = new System.Drawing.Size(142, 13);
             this.parkLabelFormat.TabIndex = 21;
@@ -167,7 +171,7 @@
             // spotLabelFormat
             // 
             this.spotLabelFormat.AutoSize = true;
-            this.spotLabelFormat.Location = new System.Drawing.Point(445, 148);
+            this.spotLabelFormat.Location = new System.Drawing.Point(275, 148);
             this.spotLabelFormat.Name = "spotLabelFormat";
             this.spotLabelFormat.Size = new System.Drawing.Size(61, 13);
             this.spotLabelFormat.TabIndex = 23;
@@ -187,7 +191,7 @@
             // 
             this.inicialDateGroupBox.Controls.Add(this.inicialTime);
             this.inicialDateGroupBox.Controls.Add(this.inicialDate);
-            this.inicialDateGroupBox.Location = new System.Drawing.Point(71, 180);
+            this.inicialDateGroupBox.Location = new System.Drawing.Point(21, 180);
             this.inicialDateGroupBox.Name = "inicialDateGroupBox";
             this.inicialDateGroupBox.Size = new System.Drawing.Size(236, 47);
             this.inicialDateGroupBox.TabIndex = 25;
@@ -208,7 +212,7 @@
             // 
             this.finalDateGroupBox.Controls.Add(this.finalTime);
             this.finalDateGroupBox.Controls.Add(this.finalDate);
-            this.finalDateGroupBox.Location = new System.Drawing.Point(433, 180);
+            this.finalDateGroupBox.Location = new System.Drawing.Point(263, 180);
             this.finalDateGroupBox.Name = "finalDateGroupBox";
             this.finalDateGroupBox.Size = new System.Drawing.Size(236, 47);
             this.finalDateGroupBox.TabIndex = 26;
@@ -235,12 +239,50 @@
             this.finalDate.Size = new System.Drawing.Size(96, 20);
             this.finalDate.TabIndex = 24;
             // 
+            // spotStateComboBox
+            // 
+            this.spotStateComboBox.FormattingEnabled = true;
+            this.spotStateComboBox.Location = new System.Drawing.Point(525, 125);
+            this.spotStateComboBox.Name = "spotStateComboBox";
+            this.spotStateComboBox.Size = new System.Drawing.Size(121, 21);
+            this.spotStateComboBox.TabIndex = 27;
+            // 
+            // spotBatteryStateComboBox
+            // 
+            this.spotBatteryStateComboBox.FormattingEnabled = true;
+            this.spotBatteryStateComboBox.Location = new System.Drawing.Point(525, 196);
+            this.spotBatteryStateComboBox.Name = "spotBatteryStateComboBox";
+            this.spotBatteryStateComboBox.Size = new System.Drawing.Size(121, 21);
+            this.spotBatteryStateComboBox.TabIndex = 28;
+            // 
+            // spotStateLabel
+            // 
+            this.spotStateLabel.AutoSize = true;
+            this.spotStateLabel.Location = new System.Drawing.Point(522, 109);
+            this.spotStateLabel.Name = "spotStateLabel";
+            this.spotStateLabel.Size = new System.Drawing.Size(57, 13);
+            this.spotStateLabel.TabIndex = 29;
+            this.spotStateLabel.Text = "Spot State";
+            // 
+            // spotBatteryStateLabel
+            // 
+            this.spotBatteryStateLabel.AutoSize = true;
+            this.spotBatteryStateLabel.Location = new System.Drawing.Point(522, 180);
+            this.spotBatteryStateLabel.Name = "spotBatteryStateLabel";
+            this.spotBatteryStateLabel.Size = new System.Drawing.Size(93, 13);
+            this.spotBatteryStateLabel.TabIndex = 30;
+            this.spotBatteryStateLabel.Text = "Spot Battery State";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ScrollBar;
             this.ClientSize = new System.Drawing.Size(714, 646);
+            this.Controls.Add(this.spotBatteryStateLabel);
+            this.Controls.Add(this.spotStateLabel);
+            this.Controls.Add(this.spotBatteryStateComboBox);
+            this.Controls.Add(this.spotStateComboBox);
             this.Controls.Add(this.finalDateGroupBox);
             this.Controls.Add(this.inicialDateGroupBox);
             this.Controls.Add(this.spotLabelFormat);
@@ -281,6 +323,10 @@
         private System.Windows.Forms.GroupBox finalDateGroupBox;
         private System.Windows.Forms.DateTimePicker finalTime;
         private System.Windows.Forms.DateTimePicker finalDate;
+        private System.Windows.Forms.ComboBox spotStateComboBox;
+        private System.Windows.Forms.ComboBox spotBatteryStateComboBox;
+        private System.Windows.Forms.Label spotStateLabel;
+        private System.Windows.Forms.Label spotBatteryStateLabel;
     }
 }
 

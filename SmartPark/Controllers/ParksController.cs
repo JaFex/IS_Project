@@ -59,7 +59,6 @@ namespace SmartPark.Controllers
             }
             catch (Exception ex)
             {
-                //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest,"ERROR PARSING DATE");
             }
             string query = "SELECT spot_id,status,timestamp FROM Registers WHERE park_id = @ParkID AND timestamp <= @Date ORDER BY timestamp DESC;";
@@ -120,7 +119,6 @@ namespace SmartPark.Controllers
             }
             catch (Exception ex)
             {
-                //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest, "ERROR PARSING DATE");
             }
             string query = "SELECT spot_id,status,timestamp FROM Registers WHERE park_id = @ParkID AND (timestamp BETWEEN @InitialDate AND @FinalDate);";
@@ -179,7 +177,6 @@ namespace SmartPark.Controllers
             }
             catch (Exception ex)
             {
-                //return Content(HttpStatusCode.BadRequest,ex.ToString());
                 return Content(HttpStatusCode.BadRequest, "ERROR PARSING DATE");
             }
 
@@ -343,9 +340,9 @@ namespace SmartPark.Controllers
                 return Content(HttpStatusCode.BadRequest, "ERROR PARSING DATE");
             }
 
-            string query= "SELECT s.id,s.latitude,s.longitude,s.park_id,s.battery_status,n.timestamp,n.status FROM Spots s join " +
-            "(SELECT TOP 1 r.status,r.spot_id,r.timestamp FROM Registers r where r.spot_id = @SpotID AND r.timestamp <= @Date ORDER BY r.timestamp DESC) as n " +
-            "on s.id = n.spot_id;";
+            string query = "SELECT s.id,s.latitude,s.longitude,s.park_id,b.battery_status,@Date,n.status FROM Spots s" +
+            " JOIN (SELECT TOP 1 r.status,r.spot_id FROM Registers r WHERE r.spot_id = @SpotID AND r.timestamp <= @Date ORDER BY r.timestamp DESC) as n on s.id = n.spot_id" +
+            " JOIN (SELECT TOP 1 b.status as battery_status,b.spot_id FROM BatteryRegisters b WHERE b.spot_id = @SpotID AND b.timestamp <= @Date ORDER BY b.timestamp DESC) as b on s.id = b.spot_id;";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
@@ -388,7 +385,7 @@ namespace SmartPark.Controllers
             }
             catch (Exception ex)
             {
-                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
+                return Content(HttpStatusCode.InternalServerError, ex.Message);// "INTERNAL ERROR");
             }
         }
 
@@ -498,8 +495,8 @@ namespace SmartPark.Controllers
             {
                 return Content(HttpStatusCode.BadRequest, "ERROR STATE INVALID");
             }
-            string queryTotal = "select count(*) from Spots where park_id = @ParkID";
-            string queryTotalState = "select count(*) from Spots where park_id = @ParkID AND UPPER(status) = UPPER(@State)";
+            string queryTotal = "SELECT count(*) FROM Spots WHERE park_id = @ParkID";
+            string queryTotalState = "SELECT count(*) FROM Spots WHERE park_id = @ParkID AND UPPER(status) = UPPER(@State)";
             try
             {
                 SqlConnection connection = new SqlConnection(connectionString);
