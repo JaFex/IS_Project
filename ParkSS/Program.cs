@@ -17,11 +17,13 @@ namespace ParkSS
     class Program
     {
         private string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["ParkSS.Properties.Settings.connStr"].ConnectionString;
-        private static string[] ipsParkDACE = new string[] { "127.0.0.1", "broker.hivemq.com" };
+        private static string[] ipsParkDACE = new string[] { "127.0.0.1" }; //, "broker.hivemq.com"
         private static string[] topicsParkDACE = new string[] { "ParkDACE\\", "ParkDACE\\all" };
         private static List<string> parkingsNameSubscribed;
         private static MqttClient mClient;
+        private static MqttClient mClientPark;
         private static ManualResetEvent wait = new ManualResetEvent(false);
+        private static ManualResetEvent waitReconnect = new ManualResetEvent(false);
 
 
         static void Main(string[] args)
@@ -33,27 +35,29 @@ namespace ParkSS
             Console.WriteLine("#####################MOSQUITTO#####################");
 
             Console.WriteLine("####Connect to the topic " + topicsParkDACE[0] + "####");
-            MqttClient mClientPark = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
+            mClientPark = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
             if (mClientPark == null || !mClientPark.IsConnected)
             {
                 return;
             }
+            mClientPark.ConnectionClosed += TryReconnectMClientPark;
             Console.WriteLine("####Connect to the other topics ####");
             mClient = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
-            if(mClient == null || !mClient.IsConnected)
+            if (mClient == null || !mClient.IsConnected)
             {
                 return;
             }
+            mClient.ConnectionClosed += TryReconnectMClient;
             Console.WriteLine("#####################END-Connection##################\n");
 
             String topicsSubscribe = "";
 
-            Console.WriteLine("####Config the mClientPark on topic " + topicsParkDACE[0] + "####");
+            Console.WriteLine("#######Config the mClientPark on topic " + topicsParkDACE[0] + "#######");
             Mosquitto.configFunctionMosquitto(mClientPark, mClientPark_MqttMsgPublishReceived);
             topicsSubscribe += "\n\t\t\t-'"+topicsParkDACE[0]+"'";
             Console.WriteLine("#####################END-Config##################\n");
  
-            Console.WriteLine("####Config the mClient on new topics####");
+            Console.WriteLine("#######Config the mClient on new topics#######");
             Mosquitto.configFunctionMosquitto(mClient, mClient_MqttMsgPublishReceived);
             Console.WriteLine("#####################END-Config##################\n");
 
@@ -63,6 +67,46 @@ namespace ParkSS
             Console.WriteLine("###########################   Starting Application   ############################");
             Console.WriteLine("#################################################################################\n\n");
             Mosquitto.subscribedMosquitto(mClientPark, topicsParkDACE[0]);
+            wait.Set();
+            waitReconnect.Set();
+        }
+
+        private static void TryReconnectMClientPark(object sender, EventArgs e)
+        {
+            wait.WaitOne();
+            if (mClientPark == null || !mClientPark.IsConnected)
+            {
+                Console.WriteLine("##############Try to reconnect mClientPark#############");
+                mClientPark = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
+                if (mClientPark == null || !mClientPark.IsConnected)
+                {
+                    System.Environment.Exit(1);
+                }
+                mClientPark.ConnectionClosed += TryReconnectMClientPark;
+                Mosquitto.configFunctionMosquitto(mClientPark, mClientPark_MqttMsgPublishReceived);
+                Mosquitto.subscribedMosquitto(mClientPark, topicsParkDACE[0]);
+            }
+            wait.Set();
+        }
+
+        private static void TryReconnectMClient(object sender, EventArgs e)
+        {
+            wait.WaitOne();
+            if (mClient == null || !mClient.IsConnected)
+            {
+                Console.WriteLine("##############Try to reconnect mClient#############");
+                mClient = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ipsParkDACE);
+                if (mClient == null || !mClient.IsConnected)
+                {
+                    System.Environment.Exit(1);
+                }
+                mClient.ConnectionClosed += TryReconnectMClient;
+                Mosquitto.configFunctionMosquitto(mClient, mClient_MqttMsgPublishReceived);
+                foreach (String parkingInformation in parkingsNameSubscribed)
+                {
+                    Mosquitto.subscribedMosquitto(mClient, topicsParkDACE[0] + "" + parkingInformation);
+                }
+            }
             wait.Set();
         }
 
@@ -110,7 +154,6 @@ namespace ParkSS
 
             /////// Send data to BD
             string response = null;
-            Console.WriteLine("#################################################################################");
             foreach (ParkingInformation park in parkingsInformationsLocal)
             {
                 try
@@ -123,7 +166,6 @@ namespace ParkSS
                 }
                 Console.WriteLine("\t\t\t"+ park.id + ":" + response);
             }
-            Console.WriteLine("#################################################################################");
 
             Console.WriteLine("##############################END New Park#################################");
             wait.Set();

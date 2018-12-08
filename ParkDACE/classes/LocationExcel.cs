@@ -19,7 +19,7 @@ namespace ParkDACE.classes
             readFile(fileName);
         }
 
-        public Boolean update()
+        public Boolean updateIfNeedUpdate()
         {
             if (checkIfAlreadyUpdated(fileName))
             {
@@ -52,6 +52,7 @@ namespace ParkDACE.classes
                 FunctionHelper.ReleaseAndCloseExcel(excelWorksheet, excelWorkbook, excelAplication);
                 return true;
             }
+            FunctionHelper.ReleaseAndCloseExcel(excelWorksheet, excelWorkbook, excelAplication);
             return value.Equals(this.updateDate);
         }
 

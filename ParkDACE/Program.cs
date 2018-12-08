@@ -15,11 +15,11 @@ namespace ParkDACE
         private static List<Provider> providers;
         private static List<LocationExcel> locationCampus;
         private static Timer timerParks;
-        private static Timer timer;
+        private static List<Timer> timers;
         private static MqttClient mClient;
-        private static string[] ips = new string[] { "127.0.0.1", "broker.hivemq.com" };
+        private static string[] ips = new string[] { "127.0.0.1" };
         private static ManualResetEvent wait = new ManualResetEvent(false);
-
+        
         static void Main(string[] args)
         {
             Console.WriteLine("#################################################################################");
@@ -27,6 +27,7 @@ namespace ParkDACE
             Console.WriteLine("#################################################################################\n\n");
             providers = new List<Provider>();
             locationCampus = new List<LocationExcel>();
+            timers = new List<Timer>();
             Console.WriteLine("######################SETTINGS#####################");
             int time = ReadXMLParkingLocation("ParkingLocation.xml");
             string topicsString = "ParkDACE\\, ParkDACE\\all";
@@ -56,6 +57,7 @@ namespace ParkDACE
             {
                 return;
             }
+            mClient.ConnectionClosed += TryReconnect;
             Console.WriteLine("Topics that will be send data "+ topicsString + "!");
             Console.WriteLine("###################END-MOSQUITTO###################\n");
 
@@ -71,18 +73,25 @@ namespace ParkDACE
                     dll.Initialize(ComputeResponse, time);
                 } else if (provider.connectionType.Equals("SOAP"))
                 {
-                    timer = new Timer(new TimerCallback(timer_SOAP), provider, 1, time);
+                    timers.Add(new Timer(new TimerCallback(timer_SOAP), provider, 1, time));
                 }
             }
-            timerParks = new Timer(new TimerCallback(timer_park_information), providers, 1, time);
+            timerParks = new Timer(new TimerCallback(timer_park_information_and_update), providers, 1, time);
             wait.Set();
         }
 
-        private static void timer_park_information(object stateInfo)
+        private static void timer_park_information_and_update(object stateInfo)
         {
             wait.WaitOne();
+            Console.WriteLine("######################Update Excel Information###########################");
+            foreach (LocationExcel locationExcel in locationCampus)
+            {
+                locationExcel.updateIfNeedUpdate();
+            }
+            Console.WriteLine("####################END-Update Excel Information#########################");
+
             Console.WriteLine("######################Park Information###########################");
-            List<Provider> providers = (List<Provider>)stateInfo;
+            //List<Provider> providersLocal = (List<Provider>)stateInfo;
             XmlDocument doc = new XmlDocument();
             XmlDeclaration dec = doc.CreateXmlDeclaration("1.0", null, null);
             doc.AppendChild(dec);
@@ -225,6 +234,27 @@ namespace ParkDACE
             int time = refreshRate*units;
             Console.WriteLine("Was found: " + providers.Count+" providers, they will be update "+ time + " in "+time+ " milliseconds!");
             return time;
+        }
+
+        private static void TryReconnect(object sender, EventArgs e)
+        {
+            if (mClient == null || !mClient.IsConnected)
+            {
+                Console.WriteLine("#####################MOSQUITTO#####################");
+                mClient = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ips);
+                if (mClient == null || !mClient.IsConnected)
+                {
+                    return;
+                }
+                mClient.ConnectionClosed += TryReconnect;
+                Console.WriteLine("###################END-MOSQUITTO###################\n");
+            }
+
+            if (mClient == null || !mClient.IsConnected)
+            {
+                return;
+            }
+            wait.Set();
         }
     }
 }
