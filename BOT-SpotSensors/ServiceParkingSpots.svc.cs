@@ -61,6 +61,7 @@ namespace BOT_SpotSensors
 
             ParkinSpot parkingSpot = new ParkinSpot();
             parkingSpot.Id = "Campu_2_B_Park2";
+            parkingSpot.Type = "parkingSpot";
             parkingSpot.Name = spotId;
             parkingSpot.Value = random.Next(0, 2) == 0 ? "occupied" : "free";
             parkingSpot.Timestamp = DateTime.Now;

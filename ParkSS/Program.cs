@@ -17,13 +17,13 @@ namespace ParkSS
     class Program
     {
         private string connectionString = System.Configuration.ConfigurationManager.ConnectionStrings["ParkSS.Properties.Settings.connStr"].ConnectionString;
-        private static string[] ipsParkDACE = new string[] { "127.0.0.1" }; //, "broker.hivemq.com"
+        private static string[] ipsParkDACE = new string[] { "127.0.0.1", "broker.hivemq.com" }; //, "broker.hivemq.com"
         private static string[] topicsParkDACE = new string[] { "ParkDACE\\", "ParkDACE\\all" };
         private static List<string> parkingsNameSubscribed;
         private static MqttClient mClient;
         private static MqttClient mClientPark;
-        private static ManualResetEvent wait = new ManualResetEvent(false);
-        private static ManualResetEvent waitReconnect = new ManualResetEvent(false);
+        private static Mutex mutex = new Mutex(true);
+        private static Mutex mutexReconnect = new Mutex(true);
 
 
         static void Main(string[] args)
@@ -67,13 +67,13 @@ namespace ParkSS
             Console.WriteLine("###########################   Starting Application   ############################");
             Console.WriteLine("#################################################################################\n\n");
             Mosquitto.subscribedMosquitto(mClientPark, topicsParkDACE[0]);
-            wait.Set();
-            waitReconnect.Set();
+            mutexReconnect.ReleaseMutex();
+            mutex.ReleaseMutex();
         }
 
         private static void TryReconnectMClientPark(object sender, EventArgs e)
         {
-            wait.WaitOne();
+            mutexReconnect.WaitOne();
             if (mClientPark == null || !mClientPark.IsConnected)
             {
                 Console.WriteLine("##############Try to reconnect mClientPark#############");
@@ -86,12 +86,13 @@ namespace ParkSS
                 Mosquitto.configFunctionMosquitto(mClientPark, mClientPark_MqttMsgPublishReceived);
                 Mosquitto.subscribedMosquitto(mClientPark, topicsParkDACE[0]);
             }
-            wait.Set();
+            mutexReconnect.ReleaseMutex();
+            mutex.ReleaseMutex();
         }
 
         private static void TryReconnectMClient(object sender, EventArgs e)
         {
-            wait.WaitOne();
+            mutexReconnect.WaitOne();
             if (mClient == null || !mClient.IsConnected)
             {
                 Console.WriteLine("##############Try to reconnect mClient#############");
@@ -107,12 +108,13 @@ namespace ParkSS
                     Mosquitto.subscribedMosquitto(mClient, topicsParkDACE[0] + "" + parkingInformation);
                 }
             }
-            wait.Set();
+            mutexReconnect.ReleaseMutex();
+            mutex.ReleaseMutex();
         }
 
         public static void mClientPark_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e) //Recebe tudo independentement que park pretence
         {
-            wait.WaitOne();
+            mutex.WaitOne();
             Console.WriteLine("#######################New Park########################################");
             Console.WriteLine("mClientPark-->> Topic: " + e.Topic);
             List<ParkingInformation> parkingsInformationsLocal = new List<ParkingInformation>();
@@ -168,12 +170,12 @@ namespace ParkSS
             }
 
             Console.WriteLine("##############################END New Park#################################");
-            wait.Set();
+            mutex.ReleaseMutex();
         }
 
         public static void mClient_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e) //Recebe tudo independentement que park pretence
         {
-            wait.WaitOne();
+            mutex.WaitOne();
             Console.WriteLine("#################################################################################");
             Console.WriteLine("mClient-->> Topic: " + e.Topic);
             ParkingSpot parkingSpot = new ParkingSpot(Encoding.UTF8.GetString(e.Message));
@@ -192,7 +194,7 @@ namespace ParkSS
             }
             Console.WriteLine("\t\t\t" + response);
             Console.WriteLine("#################################################################################");
-            wait.Set();
+            mutex.ReleaseMutex();
         }
     }
 }

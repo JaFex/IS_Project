@@ -30,6 +30,7 @@ namespace BOT_SpotSensors
     {
         string id;
         string name;
+        string type;
         string statusValue;
         DateTime timestamp;
         int batteryStatus;
@@ -40,6 +41,13 @@ namespace BOT_SpotSensors
         {
             get { return id; }
             set { id = value; }
+        }
+
+        [DataMember]
+        public string Type
+        {
+            get { return type; }
+            set { type = value; }
         }
 
         [DataMember]
@@ -68,6 +76,6 @@ namespace BOT_SpotSensors
         {
             get { return batteryStatus; }
             set { batteryStatus = value; }
-        } 
+        }
     }
 }

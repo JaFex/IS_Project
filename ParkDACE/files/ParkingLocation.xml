@@ -14,7 +14,7 @@
   </provider>
   <provider>
     <connectionType>SOAP</connectionType>
-    <endpoint>http://botservice-dummy-location/ServiceParkingSpots?wsdl</endpoint>
+    <endpoint>http://localhost:53679/ServiceParkingSpots.svc?wsdl</endpoint>
     <parkInfo>
       <id>Campus_2_B_Park2</id>
       <description>Parking between the A and the B building</description>

@@ -3,10 +3,20 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Xml;
-using ParkDACE.ServiceParkingSpots;
 using System.Text;
 using uPLibrary.Networking.M2Mqtt.Messages;
 using uPLibrary.Networking.M2Mqtt;
+using System.Security.Permissions;
+using System.CodeDom;
+using System.Web.Services.Description;
+using System.CodeDom.Compiler;
+using System.Web.Services.Protocols;
+using System.Reflection;
+using System.Data;
+using System.Web.Services.Discovery;
+using System.Xml.Schema;
+using System.Linq;
+using System.Xml.Serialization;
 
 namespace ParkDACE
 {
@@ -17,9 +27,9 @@ namespace ParkDACE
         private static Timer timerParks;
         private static List<Timer> timers;
         private static MqttClient mClient;
-        private static string[] ips = new string[] { "127.0.0.1" };
-        private static ManualResetEvent wait = new ManualResetEvent(false);
-        
+        private static string[] ips = new string[] { "127.0.0.1", "broker.hivemq.com" };
+        private static Mutex mutex = new Mutex(true);
+
         static void Main(string[] args)
         {
             Console.WriteLine("#################################################################################");
@@ -77,12 +87,12 @@ namespace ParkDACE
                 }
             }
             timerParks = new Timer(new TimerCallback(timer_park_information_and_update), providers, 1, time);
-            wait.Set();
+            mutex.ReleaseMutex();
         }
 
         private static void timer_park_information_and_update(object stateInfo)
         {
-            wait.WaitOne();
+            mutex.WaitOne();
             Console.WriteLine("######################Update Excel Information###########################");
             foreach (LocationExcel locationExcel in locationCampus)
             {
@@ -109,16 +119,16 @@ namespace ParkDACE
             Console.WriteLine("Sending information...");
             Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\"}, doc.OuterXml);
             Console.WriteLine("######################END-Park Information#####################\n\n");
-            wait.Set();
+            mutex.ReleaseMutex();
         }
 
+        
         private static void timer_SOAP(object stateInfo)
         {
-            wait.WaitOne();
+            mutex.WaitOne();
             Console.WriteLine("#######################SOAP########################");
             Provider provider = (Provider)stateInfo;
             Random random = new Random();
-            var client = new SpotSensorsClient();
             XmlDocument doc = new XmlDocument();
             XmlDeclaration dec = doc.CreateXmlDeclaration("1.0", null, null);
             doc.AppendChild(dec);
@@ -133,11 +143,20 @@ namespace ParkDACE
             }
             if (location == null)
             {
-                Console.WriteLine("Erro try to get spot from "+provider.endpoint);
+                Console.WriteLine("Erro try to get spot location from " + provider.parkInfoGeoLocationFile);
                 Console.WriteLine("######################END-SOAP#####################\n\n");
                 return;
             }
-            string xmlString = client.GetSensorDataString(location.name);
+            string xmlString = "";
+            try
+            {
+                xmlString = dynamicWebServiceCall(provider.endpoint, "GetSensorDataString", location.name).ToString();
+            } catch (Exception e)
+            {
+                Console.WriteLine("Fail to comunicate wich " + provider.endpoint);
+                Console.WriteLine("######################END-SOAP#####################\n\n");
+                return;
+            }
             doc.LoadXml(xmlString);
             XmlNode locationNode = doc.SelectSingleNode("//location");
 
@@ -146,14 +165,14 @@ namespace ParkDACE
             Console.WriteLine(FunctionHelper.formatXmlToUnminifierString(doc));
 
             Console.WriteLine("Sending information...");
-            Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\all", "ParkDACE\\"+provider.parkInfoID }, doc.OuterXml);
+            Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\all", "ParkDACE\\" + provider.parkInfoID }, doc.OuterXml);
             Console.WriteLine("######################END-SOAP#####################\n\n");
-            wait.Set();
+            mutex.ReleaseMutex();
         }
 
         public static void ComputeResponse(string str)
         {
-            wait.WaitOne();
+            mutex.WaitOne();
             Console.WriteLine("########################DLL########################");
             string[] strs = str.Split(';');
             //string[] ids = { "ParkID", "SpotID", "Timestamp", "ParkingSpotStatus", "BatteryStatus" };
@@ -166,7 +185,64 @@ namespace ParkDACE
             Console.WriteLine("Sending information...");
             Mosquitto.publishMosquitto(mClient, new string[] { "ParkDACE\\all", "ParkDACE\\" +strs[0] }, doc.OuterXml);
             Console.WriteLine("######################END-DLL######################\n\n");
-            wait.Set();
+            mutex.ReleaseMutex();
+        }
+
+        [System.Security.Permissions.PermissionSetAttribute(System.Security.Permissions.SecurityAction.InheritanceDemand, Name = "FullTrust")]
+        [System.Security.Permissions.PermissionSetAttribute(System.Security.Permissions.SecurityAction.LinkDemand, Name = "FullTrust")]
+        private static object dynamicWebServiceCall(string endpoint, string functionName, string locationName)
+        {
+            string servicoName = endpoint.Split('.')[0].Split('/')[3];
+            ServiceDescriptionImporter descriptionImporter = new ServiceDescriptionImporter();
+            descriptionImporter.ProtocolName = "Soap";
+            descriptionImporter.Style = ServiceDescriptionImportStyle.Client;
+            descriptionImporter.CodeGenerationOptions = CodeGenerationOptions.GenerateNewAsync;
+
+            DiscoveryClientProtocol clientProtocol = new DiscoveryClientProtocol();
+            clientProtocol.DiscoverAny(endpoint);
+            clientProtocol.ResolveAll();
+            clientProtocol.Documents.Values.OfType<object>()
+                                   .Select(document =>
+                                   {
+                                       if (document is ServiceDescription)
+                                           descriptionImporter.AddServiceDescription(document as ServiceDescription, string.Empty, string.Empty);
+                                       else if (document is XmlSchema)
+                                           descriptionImporter.Schemas.Add(document as XmlSchema);
+                                       return true;
+                                   })
+                                   .ToList();
+
+            CodeNamespace codeNamemspace = new CodeNamespace();
+            CodeCompileUnit codeCompileUnit = new CodeCompileUnit();
+            codeCompileUnit.Namespaces.Add(codeNamemspace);
+            ServiceDescriptionImportWarnings warning = descriptionImporter.Import(codeNamemspace, codeCompileUnit);
+            if (warning == 0)
+            {
+                // Generate and print the proxy code in C#.
+                CodeDomProvider provider1 = CodeDomProvider.CreateProvider("CSharp");
+                // Compile the assembly with the appropriate references
+                string[] assemblyReferences = new string[] { "System.dll", "System.Web.Services.dll", "System.Web.dll", "System.Xml.dll", "System.Data.dll" };
+                CompilerParameters parms = new CompilerParameters(assemblyReferences);
+                parms.GenerateInMemory = true;
+                CompilerResults results = provider1.CompileAssemblyFromDom(parms, codeCompileUnit);
+
+                foreach (CompilerError oops in results.Errors)
+                {
+                    Console.WriteLine("======== Compiler error ============");
+                    Console.WriteLine(oops.ErrorText);
+                }
+
+                //Invoke the web service method
+                object o = results.CompiledAssembly.CreateInstance(servicoName);
+                MethodInfo mi = o.GetType().GetMethod(functionName);
+                return mi.Invoke(o, new String[] { locationName });
+            }
+            else
+            {
+                // Print an error message.
+                Console.WriteLine("Warning: " + warning);
+                return null;
+            }
         }
 
         public static string CreateXMLSpot(string id, string name, string value, string timestamp, string batteryStatus)
@@ -254,7 +330,7 @@ namespace ParkDACE
             {
                 return;
             }
-            wait.Set();
+            mutex.ReleaseMutex();
         }
     }
 }

@@ -44,6 +44,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web.Services" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -59,29 +60,11 @@
     <Compile Include="classes\ParkingInformation.cs" />
     <Compile Include="classes\ParkingSpot.cs" />
     <Compile Include="classes\Provider.cs" />
-    <Compile Include="Connected Services\ServiceParkingSpots\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Connected Services\ServiceParkingSpots\ParkDACE.ServiceParkingSpots.ParkinSpot.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots.wsdl" />
-    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots2.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="files\Campus_2_B_Park2.xlsx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -92,16 +75,10 @@
     <None Include="Properties\DataSources\System.Xml.Linq.XElement.datasource" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Connected Services\ServiceParkingSpots\ServiceParkingSpots.disco" />
-    <None Include="Connected Services\ServiceParkingSpots\configuration91.svcinfo" />
-    <None Include="Connected Services\ServiceParkingSpots\configuration.svcinfo" />
-    <None Include="Connected Services\ServiceParkingSpots\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
     <Content Include="bin\Debug\files\ParkingLocation.xml" />
     <Content Include="files\ParkingLocation.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
     <Content Include="lib\ParkingSensorNodeDll.dll" />
   </ItemGroup>
@@ -136,9 +113,6 @@
       <Isolated>False</Isolated>
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadataStorage Include="Connected Services\ServiceParkingSpots\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
