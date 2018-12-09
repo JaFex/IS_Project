@@ -50,7 +50,7 @@ namespace SmartPark.Controllers
             }
         }
         [Route("api/parks/{park_id}/date/{str_date}")] 
-        public IHttpActionResult GetSpotForGivenMoment(string park_id, string str_date)//ex2 http://localhost:51352/api/parks/Campus_2_A_Park1/date/02-12-2018%206_28_22%20PM //FEITOOOOO
+        public IHttpActionResult GetParkWithSpotsForGivenMoment(string park_id, string str_date)//ex2 http://localhost:51352/api/parks/Campus_2_A_Park1/date/02-12-2018%206_28_22%20PM //FEITOOOOO
         {
             DateTime date;
             try
@@ -61,7 +61,11 @@ namespace SmartPark.Controllers
             {
                 return Content(HttpStatusCode.BadRequest,"ERROR PARSING DATE");
             }
-            string query = "SELECT spot_id,status,timestamp FROM Registers WHERE park_id = @ParkID AND timestamp <= @Date ORDER BY timestamp DESC;";
+            string query = "SELECT r.spot_id,r.status,m.MaxTime FROM" +
+            " (SELECT spot_id, MAX(timestamp) as MaxTime FROM Registers WHERE park_id = @ParkID AND timestamp <= @Date GROUP BY spot_id) m" +
+            " INNER JOIN Registers r" +
+            " ON m.spot_id = r.spot_id AND r.timestamp = m.MaxTime" +
+            " WHERE r.park_id = @ParkID ORDER BY r.timestamp DESC;";
 
             try
             {
@@ -185,7 +189,12 @@ namespace SmartPark.Controllers
                 return Content(HttpStatusCode.BadRequest, "ERROR STATE INVALID");
             }
 
-            string query = "SELECT spot_id,status,timestamp FROM Registers WHERE park_id = @ParkID AND timestamp <= @Date AND UPPER(status) = @State ORDER BY timestamp DESC;";
+            string query = "SELECT r.spot_id,r.status,m.MaxTime FROM" +
+            " (SELECT spot_id, MAX(timestamp) as MaxTime FROM Registers WHERE park_id = @ParkID AND timestamp <= @Date GROUP BY spot_id) m" +
+            " INNER JOIN Registers r " +
+            "ON m.spot_id = r.spot_id AND r.timestamp = m.MaxTime " +
+            "WHERE r.park_id = @ParkID AND UPPER(r.status) = @State " +
+            "ORDER BY r.timestamp DESC;";
 
             try
             {
@@ -229,7 +238,7 @@ namespace SmartPark.Controllers
             }
             catch (Exception ex)
             {
-                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
+                return Content(HttpStatusCode.InternalServerError, ex.Message);//"INTERNAL ERROR");
             }
         }
         
@@ -283,7 +292,7 @@ namespace SmartPark.Controllers
         [Route("api/parks/{park_id}/details")]
         public IHttpActionResult GetParkDescription(string park_id)//ex6  http://localhost:51352/api/parks/Campus_2_A_Park1/details /feito
         {
-            string query = "SELECT id,number_spots,number_special_spot,description,operating_hours FROM Parks WHERE id= @ParkID;";
+            string query = "SELECT id,number_spots,number_special_spots,description,operating_hours FROM Parks WHERE id = @ParkID;";
             try
             {
                 //string str_return = " ";
@@ -323,12 +332,13 @@ namespace SmartPark.Controllers
             }
             catch (Exception ex)
             {
-                return Content(HttpStatusCode.InternalServerError, ex.Message);// "INTERNAL ERROR");
+                return Ok(ex.Message);
+                return Content(HttpStatusCode.InternalServerError, "INTERNAL ERROR");
             }
         }
         
         [Route("api/spots/{spot_id}/details/date/{str_date}")]
-        public IHttpActionResult GetPark(string spot_id, string str_date)//ex7 http://localhost:51352/api/spots/A-8/details/date/02-12-2018%206_28_22%20PM FEITO
+        public IHttpActionResult GetSpotForGivenMoment(string spot_id, string str_date)//ex7 http://localhost:51352/api/spots/A-8/details/date/02-12-2018%206_28_22%20PM FEITO
         {
             DateTime date;//
             try
@@ -371,7 +381,6 @@ namespace SmartPark.Controllers
                             batteryStatus = reader.GetString(4),
                             timestamp = reader.GetDateTime(5),
                             status = reader.GetString(6)
-                            
                         };
                     }
                 }
@@ -390,7 +399,7 @@ namespace SmartPark.Controllers
         }
 
         [Route("api/spots/sensors/{str_battery_status}")]
-        public IHttpActionResult GetSpotSensor(String str_battery_status)//ex8 http://localhost:51352/api/spots/sensors/low
+        public IHttpActionResult GetSpotsForGivenBatteryState(String str_battery_status)//ex8 http://localhost:51352/api/spots/sensors/low
         {
             if (!str_battery_status.ToUpper().Equals("LOW") && !str_battery_status.ToUpper().Equals("GOOD"))
             {
@@ -420,7 +429,6 @@ namespace SmartPark.Controllers
                             id = reader.GetString(0),
                             batteryStatus = reader.GetString(1),
                             parkID = reader.GetString(2)
-
                         });
                     }
                 }
@@ -439,7 +447,7 @@ namespace SmartPark.Controllers
         }
 
         [Route("api/parks/{park_id}/sensors/{str_battery_status}")]
-        public IHttpActionResult GetSpotSensorInPark(string park_id, string str_battery_status)//ex9 http://localhost:51352/api/parks/Campus_2_A_Park1/sensors/low
+        public IHttpActionResult GetSpotsForGivenBatteryOnGivenPark(string park_id, string str_battery_status)//ex9 http://localhost:51352/api/parks/Campus_2_A_Park1/sensors/low
         {
             if (!str_battery_status.ToUpper().Equals("LOW") && !str_battery_status.ToUpper().Equals("GOOD"))
             {
@@ -470,7 +478,6 @@ namespace SmartPark.Controllers
                             id = reader.GetString(0),
                             batteryStatus = reader.GetString(1),
                             parkID = reader.GetString(2)
-
                         });
                     }
                 }
@@ -489,7 +496,7 @@ namespace SmartPark.Controllers
         }
 
         [Route("api/parks/{park_id}/rate/{str_state}")]
-        public IHttpActionResult GetParkOccupancyRate(string park_id, string str_state)//ex10 http://localhost:51352/api/parks/Campus_2_A_Park1/rate/occupied
+        public IHttpActionResult GetRateOfStateOnGivenPark(string park_id, string str_state)//ex10 http://localhost:51352/api/parks/Campus_2_A_Park1/rate/occupied
         {
             if (!str_state.ToUpper().Equals("FREE") && !str_state.ToUpper().Equals("OCCUPIED"))
             {
@@ -504,8 +511,8 @@ namespace SmartPark.Controllers
                 command.Parameters.AddWithValue("@ParkID", park_id);
                 connection.Open();
                 SqlDataReader reader = command.ExecuteReader();
-                int totalSpots = 0;
-                int totalStateSpots = 0;
+                float totalSpots = 0;
+                float totalStateSpots = 0;
                 if (!reader.HasRows)
                 {
                     reader.Close();
@@ -525,7 +532,7 @@ namespace SmartPark.Controllers
                 {
                     totalStateSpots = reader.GetInt32(0);
                 }
-                float rate = (float)((totalStateSpots * 100 )/ totalSpots);
+                float rate = ((totalStateSpots * 100 )/ totalSpots);
                 reader.Close();
                 return Ok(rate);
             }

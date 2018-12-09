@@ -99,15 +99,16 @@
             "2. Status of all parking spots in a specific park for a given moment;",
             "3. List of status of all parking spots in a specific park for a given time period" +
                 ";",
-            "4. List of free parking spots from a specific park for a given moment;",
+            "4. List of parking spots from a specific park for a given moment and a given spot" +
+                " state;",
             "5. List of parking spots belonging to a specific park;",
             "6. Detailed information about a specific park;",
-            "7. Detailed information about a specific parking spot in a given moment (should a" +
-                "lso indicate if the spot is free or occupied);",
-            "8. List of parking spots sensors that need to be replaced because of its critical" +
-                " battery level, within the overall platform;",
-            "9. List of parking spots sensors that need to be replaced for a specific park;",
-            "10. Instant occupancy rate in a specific park;"});
+            "7. Detailed information about a specific parking spot in a given moment;",
+            "8. List of parking spots sensors depending on the battery status provided, within" +
+                " the overall platform;",
+            "9. List of parking spots sensors depending on the battery status provided for a s" +
+                "pecific park;",
+            "10. Instant rate depending on the spot state provided in a specific park;"});
             this.comboBoxInformation.Location = new System.Drawing.Point(21, 69);
             this.comboBoxInformation.Name = "comboBoxInformation";
             this.comboBoxInformation.Size = new System.Drawing.Size(558, 24);

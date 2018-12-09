@@ -165,7 +165,19 @@ namespace AdminDashboard
                             }
                             str_url_edit = url_api_parks + "/" + parkIDString + "/rate/" + selectedSpotState;
                             float rate = getOne<float>(str_url_edit);
-                            showText.Text = string.Format("Park "+ parkIDString + " has [{0}%] occupancy rate.", rate) + "\n" ;
+                            STATE state;
+                            if (Enum.TryParse(selectedSpotState, out state)) {
+                                if (state == STATE.FREE)
+                                {
+                                    showText.Text = string.Format("Park {0} has {1}% vacancies rate.\n", parkIDString, rate.ToString("0.00"));
+                                } else
+                                {
+                                    showText.Text = string.Format("Park {0} has {1}% occupancy rate.\n", parkIDString, rate.ToString("0.00"));
+                                }
+                            } else
+                            {
+                                throw new InvalidEnumArgumentException();
+                            }
                             break;
                         default:
                             break;
@@ -175,7 +187,6 @@ namespace AdminDashboard
                  catch (Exception ex)
                 {
                     showText.Text = ex.Message;
-                    //MessageBox.Show("Error obtaining information, please try again.", "System Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -230,6 +241,7 @@ namespace AdminDashboard
             auxString += park.numberOfSpots == 0 ? "" : "\nNumber Of Spots: " + park.numberOfSpots;
             auxString += park.numberOfSpecialSpots == 0 ? "" : "\nNumber Of Special Spots: " + park.numberOfSpecialSpots;
             auxString += string.IsNullOrEmpty(park.operatingHours) ? "" : "\nOperating Hours: " + park.operatingHours;
+            auxString += string.IsNullOrEmpty(park.operatingHours) ? "" : "\nDescription: " + park.description;
             auxString += park.spots == null || park.spots.Count == 0 ? "" : "\nSpots: " + toStringSpots(park.spots, true);
             return auxString;
         }
