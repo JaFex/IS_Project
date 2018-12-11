@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ParkSS.classes
@@ -19,7 +20,7 @@ namespace ParkSS.classes
         public static string newRegister(ParkingSpot parkingSpot)
         {
             
-            string response = "INSERTED";
+            string response = "";
 
             if (!spotExists(parkingSpot.name))
             {
@@ -29,6 +30,12 @@ namespace ParkSS.classes
                 {
                     throw new SpotNotInsertedException("ERROR: Spot could not be inserted");
                 }
+
+                response += "\t\tNew spot inserted\n";
+            } else
+            {
+                Thread thread = new Thread(() => updateSpot(parkingSpot));
+                thread.Start();
             }
             //Este insert so deve acontecer se o estado for diferente do anterior
             if(!spotValueEquals(parkingSpot.name, parkingSpot.value))
@@ -39,9 +46,11 @@ namespace ParkSS.classes
                 {
                     throw new RegisterNotInsertedException("ERROR: Register of spot status could not be inserted");
                 }
+
+                response += "\t\tNew register inserted";
             } else
             {
-                response = "DUPLICATED";
+                response += "\t\tDuplicate register";
             }
 
             //Este insert so deve acontecer se o estado for diferente do anterior
@@ -60,9 +69,6 @@ namespace ParkSS.classes
 
         public static string newParking(ParkingInformation park)
         {
-
-            
-
             String response = "";
             try
             {
@@ -72,7 +78,9 @@ namespace ParkSS.classes
                 }
                 else
                 {
-                    response = updatePark(park);
+                    Thread thread = new Thread(() => updatePark(park));
+                    thread.Start();
+                    response = "UPDATED";
                 }
             } catch(Exception ex)
             {
@@ -165,6 +173,31 @@ namespace ParkSS.classes
             return i;
         }
 
+        private static void updateSpot(ParkingSpot spot)
+        {
+            SqlConnection conn = new SqlConnection(connectionString);
+            conn.Open();
+            SqlCommand sql = new SqlCommand("Select latitude, longitude From Spots Where id = @id", conn);
+            sql.Parameters.AddWithValue("@id", spot.name);
+            SqlDataReader reader = sql.ExecuteReader();
+            if (reader.Read())
+            {
+                if (spot.latitude.Equals(reader["latitude"]) && spot.longitude.Equals(reader["longitude"]))
+                {
+                    reader.Close();
+                    conn.Close();
+                    return;
+                }
+            }
+            reader.Close();
+            SqlCommand cmd = new SqlCommand("UPDATE Spots SET latitude = @latitude, longitude = @longitude  WHERE Id = @id", conn);
+            cmd.Parameters.AddWithValue("@latitude", spot.latitude);
+            cmd.Parameters.AddWithValue("@longitude", spot.longitude);
+            cmd.Parameters.AddWithValue("@id", spot.name);
+            int i = cmd.ExecuteNonQuery();
+            conn.Close();
+        }
+
         private static string insertNewPark(ParkingInformation park)
         {
             SqlConnection conn = new SqlConnection(connectionString);
@@ -186,10 +219,23 @@ namespace ParkSS.classes
             return "INSERTED";
         }
 
-        private static string updatePark(ParkingInformation park)
+        private static void updatePark(ParkingInformation park)
         {
             SqlConnection conn = new SqlConnection(connectionString);
             conn.Open();
+            SqlCommand sql = new SqlCommand("Select description, operating_hours, number_spots, number_special_spots From Parks Where id = @id", conn);
+            sql.Parameters.AddWithValue("@id", park.id);
+            SqlDataReader reader = sql.ExecuteReader();
+            if (reader.Read())
+            {
+                if(park.description.Equals(reader["description"]) && park.operatingHours.Equals(reader["operating_hours"]) && park.numberOfSpots == Convert.ToInt32(reader["number_spots"]) && park.numberOfSpecialSpots == Convert.ToInt32(reader["number_special_spots"]))
+                {
+                    reader.Close();
+                    conn.Close();
+                    return;
+                }
+            }
+            reader.Close();
             SqlCommand cmd = new SqlCommand("UPDATE Parks SET description = @description, operating_hours = @operatingHours, number_spots = @numberSpots, number_special_spots = @numberSpecialSpots WHERE Id = @id", conn);
             cmd.Parameters.AddWithValue("@description", park.description);
             cmd.Parameters.AddWithValue("@operatingHours", park.operatingHours);
@@ -198,12 +244,6 @@ namespace ParkSS.classes
             cmd.Parameters.AddWithValue("@id", park.id);
             int i = cmd.ExecuteNonQuery();
             conn.Close();
-            if (i < 1)
-            {
-                throw new ParkNotInsertedException("ERROR: Park could not be inserted");
-            }
-
-            return "UPDATED";
         }
 
         private static Boolean spotExists(string spotName)

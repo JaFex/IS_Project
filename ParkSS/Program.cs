@@ -192,7 +192,7 @@ namespace ParkSS
             {
                 response = ex.Message;
             }
-            Console.WriteLine("\t\t\t" + response);
+            Console.WriteLine("response);
             Console.WriteLine("#################################################################################");
             mutex.ReleaseMutex();
         }
