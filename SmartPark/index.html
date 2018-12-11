@@ -3,157 +3,190 @@
 <head>
     <title>RESTful web service - Products App</title>
     <meta charset="utf-8" />
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
 </head>
 <body>
     <div>
-        <h2>All Available Parks</h2>
-        <ul id="parks" />
-    </div>
-    <div>
-        <h2>Search by Park Id</h2>
-        <input type="text" id="parkId" size="5" />
-        <input type="button" value="Search" onclick="findPark();" />
-        <p id="park" />
-    </div>
-    <div>
-        <h2>Search Free Parking Spots in Park :</h2>
-        <input type="text" id="freeParkingId" size="5" />
-        <input type="button" value="Search" onclick="findFreeParking();" />
-        <p id="freeParking" />
-    </div>
-    <div>
-        <h2>Park Detail</h2>
-        <input type="text" id="detailParkId" size="5" />
-        <input type="button" value="Search" onclick="findDetailPark();" />
-        <p id="detailPark" />
-    </div>
-    <div>
-        <h2>Parking Spot Detail</h2>
-        <input type="text" id="detailParkingSpotId" size="5" />
-        <input type="button" value="Search" onclick="findDetailParkingSpot();" />
-        <p id="detailParkingSpot" />
-    </div>
-    <div>
+        <h2>Restfull urls</h2>
+        <table>
+            <tr>
+                <th>Details</th>
+                <th>Receive data</th>
+                <th>Data needed</th>
+                <th>Url</th>
+                <th>Url example</th>
+            </tr>
+            <tr>
+                <td>Used for receiving the name of all parks</td>
+                <td>Return Park with Only "ID" field</td>
+                <td>Does not receive data</td>
+                <td>http://{server}:{port}/api/parks</td>
+                <td id="url_1"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving a list of spots from given park on a given moment</td>
+                <td>Return Park with list of spots</td>
+                <td>Receive park ID and date on format (dd-mm-yyyy h_mm_ss PM)</td>
+                <td>http://{server}:{port}/api/parks/{park.id}/date/{date.onFormat(dd-mm-yyyy h_mm_ss PM)}</td>
+                <td id="url_2"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving a list of spots from given park on a given period of time</td>
+                <td>Return Park with list of spots</td>
+                <td>Receive park ID, inicial date and final date on format (dd-mm-yyyy h_mm_ss PM)</td>
+                <td>http://{server}:{port}/api/parks/{park.id}/date/initial/{date.onFormat(dd-mm-yyyy h_mm_ss PM)}/final/{date.onFormat(dd-mm-yyyy h_mm_ss PM)}</td>
+                <td id="url_3"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving a list of spots from given park on a given moment and on given status</td>
+                <td>Return Park with list of spots</td>
+                <td>Receive park ID, spot state, inicial date and final date on format (dd-mm-yyyy h_mm_ss PM)</td>
+                <td>http://{server}:{port}/api/parks/{park.id}/date/{date.onFormat(dd-mm-yyyy h_mm_ss PM)}/{spot.status}</td>
+                <td id="url_4"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving a list of spots from given park</td>
+                <td>Return Park with list of spots</td>
+                <td>Receive park ID</td>
+                <td>http://{server}:{port}/api/parks/{park.id}/spots</td>
+                <td id="url_5"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving park details</td>
+                <td>Return Park</td>
+                <td>Receive park ID</td>
+                <td>http://{server}:{port}/api/parks/{park.id}/details</td>
+                <td id="url_6"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving a spot from given spot id on a given moment</td>
+                <td>Return list of spots</td>
+                <td>Receive spot ID and date on format (dd-mm-yyyy h_mm_ss PM)</td>
+                <td>http://{server}:{port}/api/spots/{spot.id}/details/date/{date.onFormat(dd-mm-yyyy h_mm_ss PM)}</td>
+                <td id="url_7"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving a list of spots from given battery status</td>
+                <td>Return list of spots</td>
+                <td>Receive battery status Enum('LOW', 'GOOD')</td>
+                <td>http://{server}:{port}/api/spots/sensors/{battery_status.Enum('LOW', 'GOOD')}</td>
+                <td id="url_8"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving a list of spots on given park from given battery status</td>
+                <td>Return Park with list of spots</td>
+                <td>Receive park ID and battery status Enum('LOW', 'GOOD')</td>
+                <td>http://{server}:{port}/api/parks/{park.id}/sensors/{battery_status.Enum('LOW', 'GOOD')}</td>
+                <td id="url_9"></td>
+            </tr>
+            <tr>
+                <td>Used for receiving a list of spots from given status and park</td>
+                <td>Return Park with list of spots</td>
+                <td>Receive park ID and status Enum('FREE', 'OCCUPIED')</td>
+                <td>http://{server}:{port}/api/parks/{park.id}/rate/{status.Enum('FREE', 'OCCUPIED')}</td>
+                <td id="url_10"></td>
+            </tr>
+        </table>
     </div>
     <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-2.1.4.min.js"></script>
-    <script>
-        var uri = 'http://localhost:51352/api/parks'; //TODO: MUST BE UPDATED
-        $(document).ready(function () {
-            $.get(uri)
-                .done(function (data) {
-                    //alert(data);
-                    //console.dir(data);
-                    //ON SUCESS, 'data' contains a list of products
-                    $.each(data, function (key, item) {
-                        //ADD a list item for the product
-                        var text = formatItemParks(item);
-                        if (text != null)
-                            $('<li>', { text: text }).appendTo($('#parks'));
-                    });
-                }).fail(function (jqxhr, textStatus, error) {
-                    var err = textStatus + ", " + error;
-                    alert("Request failed: " + err);
+            <script>
+                $(document).ready(function () {
+                    var urlText = "http://" + window.location.host + "/api/parks";
+                    var url = document.getElementById("url_1");
+                    var a = document.createElement('a');
+                    var text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/parks/Campus_2_A_Park1/date/02-12-2019%206_28_22%20PM";
+                    url = document.getElementById("url_2");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/parks/Campus_2_A_Park1/date/initial/02-12-2017%206_28_22%20PM/final/02-12-2019%206_55_22%20PM";
+                    url = document.getElementById("url_3");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/parks/Campus_2_A_Park1/date/02-12-2019%206_28_22%20PM/free";
+                    url = document.getElementById("url_4");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/parks/Campus_2_A_Park1/spots";
+                    url = document.getElementById("url_5");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/parks/Campus_2_A_Park1/details";
+                    url = document.getElementById("url_6");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/spots/A-8/details/date/02-12-2019%206_28_22%20PM";
+                    url = document.getElementById("url_7");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/spots/sensors/low";
+                    url = document.getElementById("url_8");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/parks/Campus_2_A_Park1/sensors/low";
+                    url = document.getElementById("url_9");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
+
+                    urlText = "http://" + window.location.host + "/api/parks/Campus_2_A_Park1/rate/occupied";
+                    url = document.getElementById("url_10");
+                    a = document.createElement('a');
+                    text = document.createTextNode(urlText);
+                    a.setAttribute('href', urlText);
+                    a.appendChild(text);
+                    url.appendChild(a);
                 });
-        });
-        //park functions
-        function formatItemParks(item) {
-            if (item.Available === 0) return null;
-            return "Park (" + item.Id + ") is  Available right now ";
-        }
-        function formatItemPark(item) {
-            //if (item.Available === 0) return null;
-            var text = "Park (" + item.Id + ") currently has [" + item.ParkingSpots.length + "] Parking Spots.";
-            $.each(item.ParkingSpots, function (key, item2) {
-                var availability;
-                if (item2.Available == 0) { availability = "Unavailable"; }
-                else { availability = "Available"; }
-
-                var text2 = "Parking Spot (" + item2.Id + ") is currently " + availability;
-                text = text + "<br /> &nbsp&nbsp&nbsp&nbsp" + text2;
-            })
-            return text;
-        }
-        function formatItemDetailPark(item) {
-            var text = "Park (" + item.Id + ") currently has [" + item.ParkingSpots.length + "] Parking Spots;<br />" +
-                "Details: " + item.Description + ";";
-
-            return text;
-        }
-
-        //parking text functions
-        function formatItemFreeParking(item) {
-            var text = "Free Parking Spots in Park (" + item.Id + "):";
-            $.each(item.ParkingSpots, function (key, item2) {
-                if (item2.Available == 0) {
-                }
-                else {
-                    var text2 = "Parking Spot (" + item2.Id + ")";
-                    text = text + "<br /> &nbsp&nbsp&nbsp&nbsp" + text2;
-                }
-
-            })
-            return text;
-        }
-        function formatItemDetailParkingSpot(item) {
-            var text = "Parking Spot (" + item.Id + ") belongs to Park[" + item.ParkId + "] Parking Spots;<br />" +
-                "Availability: " + item.Available + ";";
-
-            return text;
-        }
-
-        //funbctions
-        //function 1
-        function findPark() {
-            var id = $('#parkId').val();
-            uri = http://localhost:51352/api/parkingspots:
-            $.getJSON(uri + '/' + id)
-                .done(function (data) {
-                    $('#park').html(formatItemPark(data));
-                })
-                .fail(function (jqxhr, textStatus, error) {
-                    var err = textStatus2 + ", " + error;
-                    alert("Request failed: ", err);
-                });
-        }
-        //function 5
-
-        function findFreeParking() {
-            var id = $('#freeParkingId').val();
-            $.getJSON(uri + '/' + id)
-                .done(function (data) {
-                    $('#freeParking').html(formatItemFreeParking(data));
-                })
-                .fail(function (jqxhr, textStatus, error) {
-                    var err = textStatus2 + ", " + error;
-                    alert("Request failed: ", err);
-                });
-        }
-
-        //function 6
-
-        function findDetailPark() {
-            var id = $('#detailParkId').val();
-            $.getJSON(uri + '/' + id)
-                .done(function (data) {
-                    $('#detailPark').html(formatItemDetailPark(data));
-                })
-                .fail(function (jqxhr, textStatus, error) {
-                    var err = textStatus2 + ", " + error;
-                    alert("Request failed: ", err);
-                });
-        }
-        function findDetailParkingSpot() {
-            var id = $('#detailParkId').val();
-            $.getJSON(uri + '/' + id)
-                .done(function (data) {
-                    $('#detailParkingSpot').html(formatItemDetailParkingSpot(data));
-                })
-                .fail(function (jqxhr, textStatus, error) {
-                    var err = textStatus2 + ", " + error;
-                    alert("Request failed: ", err);
-                });
-        }
-
-    </script>
+            </script>
 </body>
 </html>
