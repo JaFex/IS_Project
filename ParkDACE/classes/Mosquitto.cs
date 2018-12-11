@@ -131,7 +131,7 @@ namespace ParkDACE.classes
                 foreach (string topic in topics)
                 {
                     mClient.Publish(topic, Encoding.UTF8.GetBytes(message));
-                    Console.WriteLine("\t...information send (topic: '" + topic + "', message_size: '" + message.Length + "')");
+                    Console.WriteLine("\t...information sent (topic: '" + topic + "', message_size: '" + message.Length + "')");
                 }
             }
             else
