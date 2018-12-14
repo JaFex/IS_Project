@@ -32,6 +32,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -80,6 +81,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -96,6 +98,7 @@ namespace SmartPark.Controllers
                     }
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(
                     new Park
                     {
@@ -140,6 +143,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -155,6 +159,7 @@ namespace SmartPark.Controllers
                     }
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(
                     new Park
                     {
@@ -212,6 +217,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -228,6 +234,7 @@ namespace SmartPark.Controllers
                     }
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(
                     new Park
                     {
@@ -258,6 +265,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -275,6 +283,7 @@ namespace SmartPark.Controllers
                     }
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(
                     new Park
                     {
@@ -306,6 +315,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -325,9 +335,11 @@ namespace SmartPark.Controllers
                 if(park == null)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(park);
             }
             catch (Exception ex)
@@ -366,6 +378,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -387,9 +400,11 @@ namespace SmartPark.Controllers
                 if (spot == null)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(spot);
             }
             catch (Exception ex)
@@ -418,6 +433,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -435,9 +451,11 @@ namespace SmartPark.Controllers
                 if (spots.Count == 0)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(spots);
             }
             catch (Exception ex)
@@ -467,6 +485,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -484,9 +503,11 @@ namespace SmartPark.Controllers
                 if (spots.Count == 0)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 reader.Close();
+                connection.Close();
                 return Ok(spots);
             }
             catch (Exception ex)
@@ -516,6 +537,7 @@ namespace SmartPark.Controllers
                 if (!reader.HasRows)
                 {
                     reader.Close();
+                    connection.Close();
                     return NotFound();
                 }
                 while (reader.Read())
@@ -527,13 +549,19 @@ namespace SmartPark.Controllers
                 command.Parameters.AddWithValue("@ParkID", park_id);
                 command.Parameters.AddWithValue("@State", str_state);
                 reader = command.ExecuteReader();
-                if (!reader.HasRows) return NotFound();
+                if (!reader.HasRows)
+                {
+                    reader.Close();
+                    connection.Close();
+                    return NotFound();
+                }
                 while (reader.Read())
                 {
                     totalStateSpots = reader.GetInt32(0);
                 }
                 float rate = ((totalStateSpots * 100 )/ totalSpots);
                 reader.Close();
+                connection.Close();
                 return Ok(rate);
             }
             catch (Exception ex)
