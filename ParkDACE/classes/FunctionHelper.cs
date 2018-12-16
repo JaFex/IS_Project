@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
+using System.Xml.Schema;
 
 namespace ParkDACE.classes
 {
@@ -15,6 +17,27 @@ namespace ParkDACE.classes
 
         public FunctionHelper()
         {
+        }
+
+        public static Boolean ValidXMLParkingLocation(string filenameXML, string filenameXSD)
+        {
+            if (!checkIfFileExist(filenameXML) || !checkIfFileExist(filenameXSD))
+            {
+                Console.WriteLine("Files not found!");
+                return false;
+            }
+
+            XmlSchemaSet schema = new XmlSchemaSet();
+            schema.Add("", givePatch(filenameXSD));
+            XmlReader rd = XmlReader.Create(givePatch(filenameXML));
+            XDocument docConferm = XDocument.Load(rd);
+            Boolean valid = true;
+            docConferm.Validate(schema, (o, e) =>
+            {
+                Console.WriteLine("Invalid XML({0}) {1}", filenameXML, e.Message);
+                valid = false;
+            });
+            return valid;
         }
 
         public static string formatXmlToUnminifierString(XmlDocument doc)

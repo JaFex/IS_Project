@@ -71,6 +71,10 @@
     <None Include="files\Campus_2_A_Park1.xlsx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="files\ParkingLocation.xsd">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\DataSources\System.Xml.Linq.XElement.datasource" />
   </ItemGroup>

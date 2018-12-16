@@ -37,7 +37,7 @@ namespace BOT_SpotSensors
             XmlElement valueNoteInStatus = doc.CreateElement("value");
             valueNoteInStatus.InnerText = random.Next(0, 2) == 0 ? "occupied" : "free";
             XmlElement timestampNoteInstatus = doc.CreateElement("timestamp");
-            timestampNoteInstatus.InnerText = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            timestampNoteInstatus.InnerText = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
             statusNote.AppendChild(valueNoteInStatus);
             statusNote.AppendChild(timestampNoteInstatus);
 

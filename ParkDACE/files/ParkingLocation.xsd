@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="parkingLocation">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" name="provider">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="connectionType" type="xs:string" />
+              <xs:element name="endpoint" type="xs:string" />
+              <xs:element name="parkInfo">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="id" type="xs:string" />
+                    <xs:element name="description" type="xs:string" />
+                    <xs:element name="numberOfSpots" type="xs:integer" />
+                    <xs:element name="operatingHours" type="xs:string" />
+                    <xs:element name="numberOfSpecialSpots" type="xs:integer" />
+                    <xs:element name="geoLocationFile" type="xs:string" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="refreshRate" type="xs:integer" use="required" />
+      <xs:attribute name="units" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

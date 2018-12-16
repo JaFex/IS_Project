@@ -39,7 +39,22 @@ namespace ParkDACE
             locationCampus = new List<LocationExcel>();
             timers = new List<Timer>();
             Console.WriteLine("######################SETTINGS#####################");
+            if(!FunctionHelper.ValidXMLParkingLocation("ParkingLocation.xml", "ParkingLocation.xsd"))
+            {
+                Console.WriteLine("####################END-SETTINGS###################\n");
+                Console.WriteLine("Press any key to exit!");
+                Console.ReadKey();
+                return;
+            }
             int time = ReadXMLParkingLocation("ParkingLocation.xml");
+            if(providers == null || providers.ToArray().Length == 0)
+            {
+                Console.WriteLine("####################END-SETTINGS###################\n");
+                Console.WriteLine("Press any key to exit!");
+                Console.ReadKey();
+                return;
+            }
+            Console.WriteLine("Xml is valid!");
             string topicsString = "ParkDACE\\, ParkDACE\\all";
 
 
@@ -65,6 +80,9 @@ namespace ParkDACE
             mClient = Mosquitto.connectMosquittoGuaranteeThatTryToConnect(ips);
             if (mClient == null || !mClient.IsConnected)
             {
+                Console.WriteLine("###################END-MOSQUITTO###################\n");
+                Console.WriteLine("Press any key to exit!");
+                Console.ReadKey();
                 return;
             }
             mClient.ConnectionClosed += TryReconnect;
@@ -276,7 +294,7 @@ namespace ParkDACE
             if (!FunctionHelper.checkIfFileExist(filename))
             {
                 return 0;
-            }
+            }        
 
             XmlDocument doc = new XmlDocument();
             doc.Load(FunctionHelper.givePatch(filename));
@@ -308,7 +326,7 @@ namespace ParkDACE
                 return 2000;
             }
             int time = refreshRate*units;
-            Console.WriteLine("Was found: " + providers.Count+" providers, they will be update "+ time + " in "+time+ " milliseconds!");
+            Console.WriteLine("Was found: " + providers.Count+ " providers, the information from the providers is sent every "+time+ " milliseconds!");
             return time;
         }
 

@@ -121,6 +121,13 @@ namespace ParkSS
             List<string> parkingsNameLocal = new List<string>();
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(Encoding.UTF8.GetString(e.Message));
+            if(!FunctionHelper.ValidXML(doc, "ParkInformation.xsd"))
+            {
+                Console.WriteLine("##############################END New Park#################################");
+                mutex.ReleaseMutex();
+                return;
+            }
+            Console.WriteLine("XML is valid!");
             Boolean newTopics = false;
             foreach (XmlNode parkingInformationNode in doc.SelectNodes("/list/parkingInformation"))
             {
@@ -176,14 +183,21 @@ namespace ParkSS
         public static void mClient_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e) //Recebe tudo independentement que park pretence
         {
             mutex.WaitOne();
-            Console.WriteLine("#################################################################################");
+            Console.WriteLine("##############################" + e.Topic + "#########################################");
             Console.WriteLine("mClient-->> Topic: " + e.Topic);
+            if (!FunctionHelper.ValidXML(Encoding.UTF8.GetString(e.Message), "ParkingSpot.xsd"))
+            {
+                Console.WriteLine("##############################END "+e.Topic+"#################################");
+                mutex.ReleaseMutex();
+                return;
+            }
+            Console.WriteLine("XML is valid!");
             ParkingSpot parkingSpot = new ParkingSpot(Encoding.UTF8.GetString(e.Message));
             parkingSpot.writeOnScreen();
 
             /////// Send data to BD
             string response = null;
-            Console.WriteLine("#################################################################################");
+            Console.WriteLine("#################################### BD ########################################");
             try
             {
                 response = DatabaseHelper.newRegister(parkingSpot);
@@ -192,8 +206,8 @@ namespace ParkSS
             {
                 response = ex.Message;
             }
-            Console.WriteLine("response);
-            Console.WriteLine("#################################################################################");
+            Console.WriteLine("response");
+            Console.WriteLine("##############################END " + e.Topic + "#################################");
             mutex.ReleaseMutex();
         }
     }

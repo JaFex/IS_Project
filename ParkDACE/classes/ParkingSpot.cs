@@ -47,7 +47,7 @@ namespace ParkDACE.classes
             XmlElement valueNoteInstatus = doc.CreateElement("value");
             valueNoteInstatus.InnerText = value;
             XmlElement timestampNoteInstatus = doc.CreateElement("timestamp");
-            timestampNoteInstatus.InnerText = this.timestamp.ToString("yyyy-MM-dd HH:mm:ss");
+            timestampNoteInstatus.InnerText = this.timestamp.ToString("yyyy-MM-ddTHH:mm:ss");
             statusNote.AppendChild(valueNoteInstatus);
             statusNote.AppendChild(timestampNoteInstatus);
 
