@@ -162,7 +162,7 @@ namespace ParkSS
             }
 
             /////// Send data to BD
-            string response = null;
+            string response = "";
             foreach (ParkingInformation park in parkingsInformationsLocal)
             {
                 try
@@ -196,7 +196,7 @@ namespace ParkSS
             parkingSpot.writeOnScreen();
 
             /////// Send data to BD
-            string response = null;
+            string response = "";
             Console.WriteLine("#################################### BD ########################################");
             try
             {
@@ -206,7 +206,7 @@ namespace ParkSS
             {
                 response = ex.Message;
             }
-            Console.WriteLine("response");
+            Console.WriteLine(response);
             Console.WriteLine("##############################END " + e.Topic + "#################################");
             mutex.ReleaseMutex();
         }

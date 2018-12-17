@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<parkingLocation refreshRate="30" units="seconds">
+<parkingLocation refreshRate="2" units="minutes">
   <provider>
     <connectionType>DLL</connectionType>
     <endpoint>DLLname</endpoint>
